@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <defs>
+    <linearGradient id="coroa-ouro" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3c4"/>
+      <stop offset=".5" stop-color="#ffc83d"/>
+      <stop offset="1" stop-color="#ff9f1c"/>
+    </linearGradient>
+  </defs>
+  <path d="M3 8.5 7.5 12 12 5l4.5 7L21 8.5 19 18H5z" fill="url(#coroa-ouro)" stroke="#8a5200" stroke-width="1.2" stroke-linejoin="round"/>
+  <rect x="5" y="18.5" width="14" height="2.5" rx="1" fill="url(#coroa-ouro)" stroke="#8a5200" stroke-width="1"/>
+  <circle cx="12" cy="4.6" r="1.4" fill="#fff8de"/>
+</svg>

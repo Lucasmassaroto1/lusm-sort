@@ -8,8 +8,9 @@ import embaralhar from './assets/icons/embaralhar.svg?raw';
 import limpar from './assets/icons/limpar.svg?raw';
 import alerta from './assets/icons/alerta.svg?raw';
 import trevo from './assets/icons/trevo.svg?raw';
+import coroa from './assets/icons/coroa.svg?raw';
 
-export const icons = { somLigado, somDesligado, embaralhar, limpar, alerta, trevo } as const;
+export const icons = { somLigado, somDesligado, embaralhar, limpar, alerta, trevo, coroa } as const;
 export type IconName = keyof typeof icons;
 
 /** Coloca ícone + texto dentro de um botão. */
