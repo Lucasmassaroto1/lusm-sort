@@ -6,6 +6,7 @@ import { WheelRenderer } from './wheel';
 import { SoundFx } from './audio';
 import { Confetti } from './confetti';
 import { loadSoundOn, loadState, saveSoundOn, saveState } from './storage';
+import { icons, setButton } from './icons';
 
 // ---------- Elementos ----------
 function el<T extends HTMLElement = HTMLElement>(id: string): T {
@@ -116,7 +117,7 @@ function updateStatus(): void {
   const n = entries.length;
   ui.spin.disabled = n < 2 || wheel.spinning;
   ui.spin.classList.toggle('pulse', n >= 2 && !wheel.spinning);
-  if (wheel.spinning) ui.status.innerHTML = 'Girando… boa sorte! 🍀';
+  if (wheel.spinning) ui.status.innerHTML = `Girando… boa sorte! ${icons.trevo}`;
   else if (n === 0) ui.status.innerHTML = 'Adicione pelo menos <b>2 nomes</b> para girar.';
   else if (n === 1) ui.status.innerHTML = `Só resta <b>${escapeHtml(entries[0].name)}</b>. Adicione mais nomes para girar.`;
   else ui.status.innerHTML = '';
@@ -180,7 +181,8 @@ ui.input.addEventListener('paste', () =>
 
 // ---------- Botões ----------
 function paintSound(): void {
-  ui.sound.textContent = sfx.enabled ? '🔊 Som ligado' : '🔇 Som desligado';
+  if (sfx.enabled) setButton(ui.sound, 'somLigado', 'Som ligado');
+  else setButton(ui.sound, 'somDesligado', 'Som desligado');
 }
 ui.sound.onclick = () => {
   sfx.enabled = !sfx.enabled;
@@ -202,20 +204,22 @@ ui.shuffle.onclick = () => {
 
 let clearArmed = false;
 let clearTimer: number | undefined;
+function paintClear(): void {
+  clearArmed = false;
+  ui.clear.classList.remove('warn');
+  setButton(ui.clear, 'limpar', 'Limpar');
+}
 ui.clear.onclick = () => {
   if (wheel.spinning) return;
   if (!clearArmed) {
     clearArmed = true;
-    ui.clear.textContent = '⚠ Clique de novo p/ confirmar';
-    clearTimer = window.setTimeout(() => {
-      clearArmed = false;
-      ui.clear.textContent = '🗑 Limpar';
-    }, 3000);
+    setButton(ui.clear, 'alerta', 'Clique de novo p/ confirmar');
+    ui.clear.classList.add('warn');
+    clearTimer = window.setTimeout(paintClear, 3000);
     return;
   }
   clearTimeout(clearTimer);
-  clearArmed = false;
-  ui.clear.textContent = '🗑 Limpar';
+  paintClear();
   entries = [];
   history = [];
   wheel.rotation = 0;
@@ -311,5 +315,7 @@ setInterval(() => {
 // ---------- Início ----------
 ui.year.textContent = String(new Date().getFullYear());
 paintSound();
+paintClear();
+setButton(ui.shuffle, 'embaralhar', 'Embaralhar posições');
 refresh();
 void document.fonts?.ready.then(() => wheel.draw(entries));

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="ouro" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3c4"/>
+      <stop offset=".45" stop-color="#ffc83d"/>
+      <stop offset="1" stop-color="#ff9f1c"/>
+    </linearGradient>
+    <linearGradient id="ouro-escuro" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffb52e"/>
+      <stop offset="1" stop-color="#b86b00"/>
+    </linearGradient>
+  </defs>
+  <!-- alças -->
+  <path d="M16 14H8c0 10 4 16 12 17" fill="none" stroke="url(#ouro-escuro)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M48 14h8c0 10-4 16-12 17" fill="none" stroke="url(#ouro-escuro)" stroke-width="4" stroke-linecap="round"/>
+  <!-- taça -->
+  <path d="M15 8h34v10c0 11-7.6 19-17 19S15 29 15 18z" fill="url(#ouro)" stroke="#8a5200" stroke-width="1.5"/>
+  <path d="M21 13v5c0 5 2.5 9.5 6 11.5" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- haste e base -->
+  <path d="M28 37h8l1.5 9h-11z" fill="url(#ouro-escuro)"/>
+  <rect x="20" y="46" width="24" height="6" rx="2" fill="url(#ouro)" stroke="#8a5200" stroke-width="1.5"/>
+  <rect x="16" y="52" width="32" height="6" rx="2.5" fill="url(#ouro-escuro)" stroke="#8a5200" stroke-width="1.5"/>
+  <!-- estrela -->
+  <path d="m32 14 2.2 4.5 5 .7-3.6 3.5.9 4.9-4.5-2.4-4.5 2.4.9-4.9-3.6-3.5 5-.7z" fill="#fff8de"/>
+</svg>

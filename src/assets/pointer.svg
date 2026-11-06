@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 46 60" width="46" height="60">
+  <defs>
+    <linearGradient id="ponteiro" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3c4"/>
+      <stop offset=".5" stop-color="#ffc83d"/>
+      <stop offset="1" stop-color="#ff9f1c"/>
+    </linearGradient>
+  </defs>
+  <path d="M23 58 L4 14 A20 20 0 1 1 42 14 Z" fill="url(#ponteiro)" stroke="#3a2300" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="23" cy="16" r="6" fill="#3a2300"/>
+</svg>

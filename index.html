@@ -7,32 +7,19 @@
   <title>LUSM - Sorte</title>
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="manifest" href="/site.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
   <header>
-    <img class="brand-icon" src="/favicon.svg" alt="" width="52" height="52">
-    <div class="logo">LUSM <span>-</span> SORTE</div>
+    <h1 class="logo">LUSM <span>-</span> SORTE</h1>
   </header>
 
   <main>
     <section class="stage">
       <div class="wheel-wrap" id="wrap">
-        <svg class="pointer" id="pointer" viewBox="0 0 46 60" aria-hidden="true">
-          <defs>
-            <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#fff3c4"/><stop offset=".5" stop-color="#ffc83d"/><stop offset="1" stop-color="#ff9f1c"/>
-            </linearGradient>
-          </defs>
-          <path d="M23 58 L4 14 A20 20 0 1 1 42 14 Z" fill="url(#pg)" stroke="#3a2300" stroke-width="2.5"/>
-          <circle cx="23" cy="16" r="6" fill="#3a2300"/>
-        </svg>
+        <img class="pointer" id="pointer" src="/src/assets/pointer.svg" alt="" draggable="false">
         <canvas id="wheel" width="1120" height="1120"></canvas>
         <button class="hub" id="spin" title="Girar">GIRAR</button>
       </div>
@@ -50,11 +37,9 @@
       <ul class="names" id="list"></ul>
 
       <div class="opts">
-        <div class="row">
-          <button class="btn ghost" id="sound" title="Ligar/desligar som">🔊 Som ligado</button>
-          <button class="btn ghost" id="shuffle">🔀 Embaralhar posições</button>
-          <button class="btn ghost" id="clear">🗑 Limpar</button>
-        </div>
+        <button class="btn ghost" id="sound" title="Ligar/desligar som">Som ligado</button>
+        <button class="btn ghost" id="shuffle">Embaralhar posições</button>
+        <button class="btn ghost" id="clear">Limpar</button>
       </div>
 
       <div class="history">
@@ -68,7 +53,7 @@
 
   <div class="overlay" id="overlay">
     <div class="card">
-      <div class="trophy">🏆</div>
+      <img class="trophy" src="/src/assets/icons/trofeu.svg" alt="" width="72" height="72">
       <div class="lbl">O sorteado é</div>
       <div class="win" id="winName">—</div>
       <div class="row">

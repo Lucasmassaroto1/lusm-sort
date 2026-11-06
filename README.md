@@ -1,7 +1,5 @@
 # LUSM - Sorte
 
-![LUSM - Sorte](brand/logo.png)
-
 Roleta de sorteio honesta, feita em **TypeScript** com **Vite**. Cada nome ocupa uma fatia, quem é sorteado sai da roleta (nunca repete) e o resultado é escolhido por um gerador criptográfico.
 
 ## Como rodar
@@ -54,10 +52,11 @@ Os testes em `src/spin.test.ts` confirmam que a roleta sempre para no nome sorte
 
 ```
 index.html          página
-public/             favicon e ícone
-brand/              logo (SVG e PNG)
+public/             favicons
 src/
+  assets/           ponteiro e ícones em SVG
   main.ts           interface: lista, botões, giro, resultado
+  icons.ts          carrega os ícones SVG nos botões
   wheel.ts          desenho da roleta no canvas
   spin.ts           matemática do giro (sorteio → ângulo final)
   random.ts         aleatoriedade criptográfica e embaralhamento
@@ -69,14 +68,11 @@ src/
   spin.test.ts      testes
 ```
 
-## Logo
+## Imagens
 
-Em `brand/`:
-
-- `logo.svg` / `logo.png`: logo completa com fundo escuro
-- `logo-transparente.svg`: mesma logo sem fundo (para usar sobre fundos escuros)
-- `icone.svg` / `icone-512.png`: só o ícone da roleta, quadrado
-- `public/`: favicons (`favicon.ico`, `favicon.svg`, PNG 16/32), ícone do iPhone (`apple-touch-icon.png`) e ícones 192/512 do `site.webmanifest` (atalho na tela inicial do celular)
+- `public/favicon.ico`, `public/favicon.svg`: ícone da aba do navegador
+- `src/assets/pointer.svg`: ponteiro da roleta
+- `src/assets/icons/`: ícones dos botões, do troféu e do trevo (SVG)
 
 ---
 
