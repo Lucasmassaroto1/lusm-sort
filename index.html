@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0a14">
+  <title>LUSM - Sorte</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <img class="brand-icon" src="/favicon.svg" alt="" width="52" height="52">
+    <div class="logo">LUSM <span>-</span> SORTE</div>
+  </header>
+
+  <main>
+    <section class="stage">
+      <div class="wheel-wrap" id="wrap">
+        <svg class="pointer" id="pointer" viewBox="0 0 46 60" aria-hidden="true">
+          <defs>
+            <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fff3c4"/><stop offset=".5" stop-color="#ffc83d"/><stop offset="1" stop-color="#ff9f1c"/>
+            </linearGradient>
+          </defs>
+          <path d="M23 58 L4 14 A20 20 0 1 1 42 14 Z" fill="url(#pg)" stroke="#3a2300" stroke-width="2.5"/>
+          <circle cx="23" cy="16" r="6" fill="#3a2300"/>
+        </svg>
+        <canvas id="wheel" width="1120" height="1120"></canvas>
+        <button class="hub" id="spin" title="Girar">GIRAR</button>
+      </div>
+      <div class="status" id="status"></div>
+    </section>
+
+    <aside class="panel">
+      <h2>Participantes <span class="count" id="count">0</span></h2>
+      <div class="add">
+        <textarea id="input" rows="1" placeholder="Digite um nome e aperte Enter"></textarea>
+        <button class="btn" id="addBtn">Adicionar</button>
+      </div>
+      <div class="hint">Dica: cole vários nomes de uma vez (um por linha ou separados por vírgula).</div>
+      <div class="msg" id="msg"></div>
+      <ul class="names" id="list"></ul>
+
+      <div class="opts">
+        <div class="row">
+          <button class="btn ghost" id="sound" title="Ligar/desligar som">🔊 Som ligado</button>
+          <button class="btn ghost" id="shuffle">🔀 Embaralhar posições</button>
+          <button class="btn ghost" id="clear">🗑 Limpar</button>
+        </div>
+      </div>
+
+      <div class="history">
+        <h2>Resultados <span class="count" id="hcount">0</span></h2>
+        <ol class="hist" id="hist"></ol>
+      </div>
+    </aside>
+  </main>
+
+  <footer>© <span id="year"></span> LUSM - Lucas Silva Massaroto</footer>
+
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <div class="trophy">🏆</div>
+      <div class="lbl">O sorteado é</div>
+      <div class="win" id="winName">—</div>
+      <div class="row">
+        <button class="btn" id="again">Girar de novo</button>
+        <button class="btn ghost" id="close">Fechar</button>
+      </div>
+    </div>
+  </div>
+  <canvas id="confetti"></canvas>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
