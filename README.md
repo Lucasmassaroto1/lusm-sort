@@ -76,7 +76,7 @@ Em `brand/`:
 - `logo.svg` / `logo.png`: logo completa com fundo escuro
 - `logo-transparente.svg`: mesma logo sem fundo (para usar sobre fundos escuros)
 - `icone.svg` / `icone-512.png`: só o ícone da roleta, quadrado
-- `public/favicon.svg`: ícone da aba do navegador
+- `public/`: favicons (`favicon.ico`, `favicon.svg`, PNG 16/32), ícone do iPhone (`apple-touch-icon.png`) e ícones 192/512 do `site.webmanifest` (atalho na tela inicial do celular)
 
 ---
 
