@@ -21,6 +21,27 @@ npm test          # roda os testes de honestidade do sorteio
 
 A pasta `dist/` gerada pelo build pode ser publicada em qualquer hospedagem estática (GitHub Pages, Netlify, Vercel…).
 
+## Sorteio verificável (branch de teste)
+
+Cada giro pode ser conferido por qualquer pessoa, sem precisar confiar em quem girou.
+
+1. **Antes do giro**, a roleta mostra o *compromisso do próximo giro*: um hash SHA-256 de uma semente secreta + a lista de nomes (na ordem das fatias). Publique ou mostre esse hash antes de girar.
+2. **Opcional:** depois que o compromisso aparece, alguém do público escolhe uma *palavra do público*. Ela entra no cálculo, então nem quem gira consegue escolher o resultado antes.
+3. **Depois do giro**, a semente é revelada. O botão **Copiar prova** copia tudo (nomes, semente, compromisso, palavra e vencedor) em JSON.
+4. **Para conferir:** clique em *Verificar um sorteio* no site (ou num resultado do histórico) ou, sem depender do site:
+
+```bash
+node scripts/verificar.mjs prova.json
+```
+
+O script refaz as contas com o `crypto` do Node, sem usar o código do site.
+
+Como é calculado:
+- compromisso = `SHA-256("lusm-v1|commit|" + semente + "|" + JSON(nomes))`
+- vencedor = primeiros 4 bytes de `SHA-256("lusm-v1|draw|" + semente + "|" + JSON(nomes) + "|" + palavra + "|" + contador)`, com amostragem por rejeição (chance exatamente 1/n)
+
+Qualquer mudança na lista (adicionar, remover, embaralhar) gera uma semente e um compromisso novos. Precisa de HTTPS ou localhost (Web Crypto).
+
 ## Publicar na Vercel
 
 O projeto já vem configurado (`vercel.json`). Tem dois jeitos:

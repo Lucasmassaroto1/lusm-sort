@@ -24,6 +24,19 @@
         <button class="hub" id="spin" title="Girar">GIRAR</button>
       </div>
       <div class="status" id="status"></div>
+
+      <div class="proof" id="proof" hidden>
+        <div class="prow">
+          <span class="plbl">Compromisso do próximo giro</span>
+          <button class="plink" id="copyCommit" title="Copiar o compromisso">copiar</button>
+        </div>
+        <code class="phash" id="commit">gerando…</code>
+        <div class="prow">
+          <input class="pword" id="word" maxlength="60" autocomplete="off"
+                 placeholder="Palavra do público (opcional)" title="Digitada depois que o compromisso aparece; entra no cálculo do vencedor">
+          <button class="plink" id="openVerify">Verificar um sorteio</button>
+        </div>
+      </div>
     </section>
 
     <aside class="panel">
@@ -62,9 +75,28 @@
       <img class="trophy" src="/src/assets/icons/trofeu.svg" alt="" width="72" height="72">
       <div class="lbl">O sorteado é</div>
       <div class="win" id="winName">—</div>
+      <div class="wproof" id="winProof" hidden>
+        <div class="plbl">Semente revelada</div>
+        <code class="phash" id="winSeed"></code>
+        <div class="pok" id="winCheck"></div>
+      </div>
       <div class="row">
+        <button class="btn ghost" id="copyProof">Copiar prova</button>
         <button class="btn" id="again">Girar de novo</button>
         <button class="btn ghost" id="close">Fechar</button>
+      </div>
+    </div>
+  </div>
+  <div class="overlay" id="verifyOverlay">
+    <div class="card vcard">
+      <div class="lbl">Verificar sorteio</div>
+      <p class="vhelp">Cole a prova (JSON) de um sorteio. O site refaz as contas e mostra se tudo bate.
+        Para conferir sem depender do site: <code>node scripts/verificar.mjs prova.json</code></p>
+      <textarea id="verifyInput" rows="6" spellcheck="false" placeholder='{"v":1,"names":[...],"seed":"...","commit":"...", ...}'></textarea>
+      <ul class="vres" id="verifyResult"></ul>
+      <div class="row">
+        <button class="btn" id="verifyBtn">Verificar</button>
+        <button class="btn ghost" id="verifyClose">Fechar</button>
       </div>
     </div>
   </div>

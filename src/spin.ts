@@ -40,10 +40,19 @@ const cryptoSource: RandomSource = { int: secureInt, float: secureFloat };
  * 2) escolhe um ponto aleatório dentro da fatia, longe das bordas;
  * 3) calcula quanto girar (algumas voltas completas + o necessário para parar nesse ponto).
  */
-export function planSpin(rotation: number, n: number, rnd: RandomSource = cryptoSource): SpinPlan {
+export function planSpin(
+  rotation: number,
+  n: number,
+  rnd: RandomSource = cryptoSource,
+  /** Vencedor já sorteado por fora (ex.: sorteio verificável). Se omitido, sorteia aqui. */
+  fixedWinner?: number,
+): SpinPlan {
   if (n < 2) throw new RangeError('São necessários pelo menos 2 nomes para girar.');
+  if (fixedWinner !== undefined && !(Number.isInteger(fixedWinner) && fixedWinner >= 0 && fixedWinner < n)) {
+    throw new RangeError(`planSpin: vencedor inválido (${fixedWinner})`);
+  }
   const seg = TAU / n;
-  const winner = rnd.int(n);
+  const winner = fixedWinner ?? rnd.int(n);
   const inside = 0.12 + rnd.float() * 0.76;
   const target = mod(-(winner + inside) * seg, TAU);
   const delta = mod(target - mod(rotation, TAU), TAU);

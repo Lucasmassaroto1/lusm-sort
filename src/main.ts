@@ -3,6 +3,7 @@ import { COLORS, MAX_NAME_LENGTH, type Entry, type HistoryItem } from './types';
 import { secureShuffle } from './random';
 import { easeOut, indexAtPointer, mod, planSpin, TAU } from './spin';
 import { winsByName } from './stats';
+import { commitFor, makeProof, newSeed, verifyProof, type Proof } from './fair';
 import { WheelRenderer } from './wheel';
 import { SoundFx } from './audio';
 import { Confetti } from './confetti';
@@ -43,12 +44,32 @@ const ui = {
   again: el<HTMLButtonElement>('again'),
   close: el<HTMLButtonElement>('close'),
   confetti: el<HTMLCanvasElement>('confetti'),
+  proof: el('proof'),
+  commit: el('commit'),
+  copyCommit: el<HTMLButtonElement>('copyCommit'),
+  word: el<HTMLInputElement>('word'),
+  openVerify: el<HTMLButtonElement>('openVerify'),
+  winProof: el('winProof'),
+  winSeed: el('winSeed'),
+  winCheck: el('winCheck'),
+  copyProof: el<HTMLButtonElement>('copyProof'),
+  verifyOverlay: el('verifyOverlay'),
+  verifyInput: el<HTMLTextAreaElement>('verifyInput'),
+  verifyResult: el<HTMLUListElement>('verifyResult'),
+  verifyBtn: el<HTMLButtonElement>('verifyBtn'),
+  verifyClose: el<HTMLButtonElement>('verifyClose'),
 };
 
 // ---------- Estado ----------
 const saved = loadState();
 let entries: Entry[] = saved.names.map(name => ({ name, color: COLORS[0] }));
 let history: HistoryItem[] = saved.history;
+
+/** Compromisso do próximo giro: semente secreta + nomes, já com o hash publicado. */
+let pending: { seed: string; commit: string; names: string[] } | null = null;
+let commitToken = 0;
+/** Prova do último giro (para o botão "Copiar prova"). */
+let lastProof: Proof | null = null;
 
 const wheel = new WheelRenderer(ui.wheel);
 const sfx = new SoundFx(loadSoundOn());
@@ -118,7 +139,8 @@ function renderHistory(): void {
       (place === 1 ? `<span class="crown" aria-hidden="true">${icons.coroa}</span>` : '') +
       `<span class="pname"></span><span class="ptime">${escapeHtml(h.time)}</span><div class="block">${place}</div>`;
     div.querySelector<HTMLElement>('.pname')!.textContent = h.name;
-    div.title = `${place}º · ${h.name}`;
+    div.title = `${place}º · ${h.name}` + (h.proof ? ' · clique para verificar' : '');
+    if (h.proof) { div.classList.add('has-proof'); div.onclick = () => openVerify(h.proof!); }
     ui.podium.appendChild(div);
   });
   ui.podium.hidden = history.length === 0;
@@ -130,6 +152,7 @@ function renderHistory(): void {
     const li = document.createElement('li');
     li.innerHTML = `<span class="nm"></span><span class="t">${escapeHtml(h.time)}</span>`;
     li.querySelector<HTMLElement>('.nm')!.textContent = h.name;
+    if (h.proof) { li.classList.add('has-proof'); li.title = 'Clique para verificar'; li.onclick = () => openVerify(h.proof!); }
     ui.hist.appendChild(li);
   });
   ui.hcount.textContent = String(history.length);
@@ -181,8 +204,10 @@ function renderStats(): void {
 
 function updateStatus(): void {
   const n = entries.length;
-  ui.spin.disabled = n < 2 || wheel.spinning;
-  ui.spin.classList.toggle('pulse', n >= 2 && !wheel.spinning);
+  const ready = n >= 2 && !wheel.spinning && pending !== null;
+  ui.spin.disabled = !ready;
+  ui.spin.classList.toggle('pulse', ready);
+  ui.word.disabled = wheel.spinning;
   if (wheel.spinning) ui.status.innerHTML = `Girando… boa sorte! ${icons.trevo}`;
   else if (n === 0) ui.status.innerHTML = 'Adicione pelo menos <b>2 nomes</b> para girar.';
   else if (n === 1) ui.status.innerHTML = `Só resta <b>${escapeHtml(entries[0].name)}</b>. Adicione mais nomes para girar.`;
@@ -200,7 +225,76 @@ function refresh(): void {
   updateStatus();
   wheel.draw(entries);
   persist();
+  void prepareCommit();
 }
+
+// ---------- Sorteio verificável ----------
+/**
+ * Gera semente nova e publica o compromisso para a lista ATUAL.
+ * Chamado sempre que a lista muda e depois de cada giro, então o compromisso
+ * mostrado na tela é sempre o que vale para o próximo giro.
+ */
+async function prepareCommit(): Promise<void> {
+  const token = ++commitToken;
+  pending = null;
+  const names = entries.map(e => e.name);
+  ui.proof.hidden = names.length < 2;
+  ui.commit.textContent = 'gerando…';
+  updateStatus();
+  if (names.length < 2) return;
+  const seed = newSeed();
+  const commit = await commitFor(seed, names);
+  if (token !== commitToken) return; // a lista mudou enquanto calculava
+  pending = { seed, commit, names };
+  ui.commit.textContent = commit;
+  updateStatus();
+}
+
+async function copyText(text: string, okMsg: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(text);
+    showMsg(okMsg, true);
+  } catch {
+    showMsg('Não foi possível copiar. Selecione o texto e copie manualmente.');
+  }
+}
+
+ui.copyCommit.onclick = () => { if (pending) void copyText(pending.commit, 'Compromisso copiado!'); };
+ui.copyProof.onclick = () => { if (lastProof) void copyText(JSON.stringify(lastProof), 'Prova copiada!'); };
+
+function openVerify(proof?: Proof): void {
+  ui.verifyResult.innerHTML = '';
+  if (proof) ui.verifyInput.value = JSON.stringify(proof, null, 2);
+  ui.verifyOverlay.classList.add('show');
+  if (proof) void runVerify();
+  else ui.verifyInput.focus();
+}
+function closeVerify(): void { ui.verifyOverlay.classList.remove('show'); }
+
+async function runVerify(): Promise<void> {
+  ui.verifyResult.innerHTML = '';
+  const add = (text: string, ok: boolean, total = false): void => {
+    const li = document.createElement('li');
+    li.className = (ok ? 'ok' : 'bad') + (total ? ' total' : '');
+    li.textContent = text;
+    ui.verifyResult.appendChild(li);
+  };
+  let data: Partial<Proof>;
+  try {
+    data = JSON.parse(ui.verifyInput.value) as Partial<Proof>;
+  } catch {
+    add('Isso não é um JSON válido.', false, true);
+    return;
+  }
+  const r = await verifyProof(data);
+  r.checks.forEach(c => add(c.label, c.ok));
+  add(r.ok ? 'Sorteio válido.' : 'Sorteio NÃO confere.', r.ok, true);
+}
+
+ui.openVerify.onclick = () => openVerify();
+ui.verifyBtn.onclick = () => void runVerify();
+ui.verifyClose.onclick = closeVerify;
+ui.verifyOverlay.addEventListener('click', e => { if (e.target === ui.verifyOverlay) closeVerify(); });
 
 // ---------- Adicionar nomes ----------
 function autoGrow(): void {
@@ -294,15 +388,20 @@ ui.clear.onclick = () => {
 };
 
 // ---------- Giro ----------
-function spin(): void {
-  if (wheel.spinning || entries.length < 2) return;
+async function spin(): Promise<void> {
+  if (wheel.spinning || entries.length < 2 || !pending) return;
+  const names = entries.map(e => e.name);
+  // Segurança extra: o compromisso precisa ser exatamente da lista que está na roleta.
+  if (JSON.stringify(names) !== JSON.stringify(pending.names)) { void prepareCommit(); return; }
   sfx.unlock();
   const n = entries.length;
-  // O vencedor é sorteado aqui, antes da animação; a roleta só gira até ele.
-  const plan = planSpin(wheel.rotation, n);
   wheel.spinning = true;
   ui.wrap.classList.add('spinning');
   updateStatus();
+
+  // O vencedor sai da semente já comprometida + palavra do público, antes da animação.
+  const proof = await makeProof(pending.seed, pending.names, ui.word.value.trim());
+  const plan = planSpin(wheel.rotation, n, undefined, proof.index);
 
   const t0 = performance.now();
   let lastIdx = indexAtPointer(wheel.rotation, n);
@@ -321,12 +420,12 @@ function spin(): void {
     wheel.bulbPhase = Math.floor(now / 90);
     wheel.draw(entries);
     if (t < 1) requestAnimationFrame(frame);
-    else finish(plan.winner);
+    else finish(plan.winner, proof);
   };
   requestAnimationFrame(frame);
 }
 
-function finish(winnerIndex: number): void {
+function finish(winnerIndex: number, proof: Proof): void {
   const n = entries.length;
   const landed = indexAtPointer(wheel.rotation, n);
   if (landed !== winnerIndex) console.warn('LUSM: ponteiro fora do vencedor sorteado', { landed, winnerIndex });
@@ -337,9 +436,22 @@ function finish(winnerIndex: number): void {
   wheel.spinning = false;
   ui.wrap.classList.remove('spinning');
   const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  history.push({ name: winner.name, n: history.length + 1, time });
+  history.push({ name: winner.name, n: history.length + 1, time, proof });
   renderHistory();
   persist();
+
+  // Revela a semente e já confere na hora.
+  lastProof = proof;
+  ui.winProof.hidden = false;
+  ui.winSeed.textContent = proof.seed;
+  ui.winCheck.className = 'pok';
+  ui.winCheck.textContent = 'Conferindo…';
+  void verifyProof(proof).then(r => {
+    ui.winCheck.className = 'pok' + (r.ok ? '' : ' bad');
+    ui.winCheck.textContent = r.ok ? '✔ Bate com o compromisso publicado antes do giro' : '✘ Não confere';
+  });
+  ui.word.value = '';
+  void prepareCommit(); // novo compromisso para o próximo giro
 
   ui.winName.textContent = winner.name;
   ui.overlay.classList.add('show');
@@ -352,16 +464,19 @@ function closeModal(): void {
   ui.overlay.classList.remove('show');
 }
 
-ui.spin.onclick = spin;
+ui.spin.onclick = () => void spin();
 ui.close.onclick = closeModal;
-ui.again.onclick = () => { closeModal(); setTimeout(spin, 450); };
+ui.again.onclick = () => { closeModal(); setTimeout(() => void spin(), 450); };
 ui.overlay.addEventListener('click', e => { if (e.target === ui.overlay) closeModal(); });
 document.addEventListener('keydown', e => {
   const open = ui.overlay.classList.contains('show');
+  const vOpen = ui.verifyOverlay.classList.contains('show');
   if (e.key === 'Escape' && open) closeModal();
-  if (e.code === 'Space' && !open && document.activeElement?.tagName !== 'TEXTAREA') {
+  if (e.key === 'Escape' && vOpen) closeVerify();
+  const typing = ['TEXTAREA', 'INPUT'].includes(document.activeElement?.tagName ?? '');
+  if (e.code === 'Space' && !open && !vOpen && !typing) {
     e.preventDefault();
-    spin();
+    void spin();
   }
 });
 

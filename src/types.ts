@@ -1,3 +1,5 @@
+import type { Proof } from './fair';
+
 export interface Entry {
   name: string;
   color: string;
@@ -7,6 +9,8 @@ export interface HistoryItem {
   name: string;
   n: number;
   time: string;
+  /** Prova do sorteio verificável (sorteios antigos não têm). */
+  proof?: Proof;
 }
 
 export const COLORS = [
