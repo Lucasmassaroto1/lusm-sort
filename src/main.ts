@@ -1,7 +1,8 @@
 import './style.css';
 import { COLORS, MAX_NAME_LENGTH, type Entry, type HistoryItem } from './types';
 import { secureShuffle } from './random';
-import { easeOut, indexAtPointer, planSpin } from './spin';
+import { easeOut, indexAtPointer, mod, planSpin, TAU } from './spin';
+import { winsByName } from './stats';
 import { WheelRenderer } from './wheel';
 import { SoundFx } from './audio';
 import { Confetti } from './confetti';
@@ -30,6 +31,10 @@ const ui = {
   shuffle: el<HTMLButtonElement>('shuffle'),
   clear: el<HTMLButtonElement>('clear'),
   podium: el('podium'),
+  stats: el('stats'),
+  htabs: el('htabs'),
+  tabHist: el<HTMLButtonElement>('tabHist'),
+  tabStats: el<HTMLButtonElement>('tabStats'),
   hist: el<HTMLOListElement>('hist'),
   hcount: el('hcount'),
   year: el('year'),
@@ -128,6 +133,50 @@ function renderHistory(): void {
     ui.hist.appendChild(li);
   });
   ui.hcount.textContent = String(history.length);
+  renderStats();
+}
+
+function showTab(t: 'hist' | 'stats'): void {
+  ui.hist.hidden = t !== 'hist';
+  ui.stats.hidden = t !== 'stats';
+  ui.tabHist.classList.toggle('on', t === 'hist');
+  ui.tabStats.classList.toggle('on', t === 'stats');
+  ui.tabHist.setAttribute('aria-selected', String(t === 'hist'));
+  ui.tabStats.setAttribute('aria-selected', String(t === 'stats'));
+}
+ui.tabHist.onclick = () => showTab('hist');
+ui.tabStats.onclick = () => showTab('stats');
+
+/** Placar: quantas vezes cada nome ganhou e a % sobre o total de sorteios. */
+function renderStats(): void {
+  ui.stats.innerHTML = '';
+  ui.htabs.hidden = history.length === 0;
+  if (!history.length) showTab('hist');
+  if (!history.length) return;
+
+  const stats = winsByName(history, entries.map(e => e.name));
+  const max = Math.max(...stats.map(s => s.wins), 1);
+  const colorOf = new Map(entries.map(e => [e.name, e.color]));
+
+  const title = document.createElement('div');
+  title.className = 'stats-title';
+  title.textContent = `Vitórias em ${history.length} ${history.length === 1 ? 'sorteio' : 'sorteios'}`;
+  ui.stats.appendChild(title);
+
+  for (const s of stats) {
+    const row = document.createElement('div');
+    row.className = 'srow' + (colorOf.has(s.name) ? '' : ' gone');
+    row.title = colorOf.has(s.name) ? s.name : `${s.name} (fora da roleta)`;
+    row.innerHTML =
+      `<span class="sname"></span>` +
+      `<span class="sbar"><span class="sfill"></span></span>` +
+      `<span class="snum">${s.wins} <small>${s.pct.toFixed(0)}%</small></span>`;
+    row.querySelector<HTMLElement>('.sname')!.textContent = s.name;
+    const fill = row.querySelector<HTMLElement>('.sfill')!;
+    fill.style.width = `${(s.wins / max) * 100}%`;
+    fill.style.background = colorOf.get(s.name) ?? 'var(--muted)';
+    ui.stats.appendChild(row);
+  }
 }
 
 function updateStatus(): void {
@@ -283,6 +332,8 @@ function finish(winnerIndex: number): void {
   if (landed !== winnerIndex) console.warn('LUSM: ponteiro fora do vencedor sorteado', { landed, winnerIndex });
   const winner = entries[landed];
 
+  // Volta a rotação para [0, 2π): mesma posição na tela, mas o número não cresce a cada giro.
+  wheel.rotation = mod(wheel.rotation, TAU);
   wheel.spinning = false;
   ui.wrap.classList.remove('spinning');
   const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
