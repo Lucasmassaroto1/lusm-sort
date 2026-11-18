@@ -4,9 +4,8 @@ import { secureShuffle } from './random';
 import { easeOut, indexAtPointer, mod, planSpin, TAU } from './spin';
 import { winsByName } from './stats';
 import { WheelRenderer } from './wheel';
-import { SoundFx } from './audio';
 import { Confetti } from './confetti';
-import { loadSoundOn, loadState, saveSoundOn, saveState } from './storage';
+import { loadState, saveState } from './storage';
 import { icons, setButton } from './icons';
 
 // ---------- Elementos ----------
@@ -27,7 +26,6 @@ const ui = {
   msg: el('msg'),
   list: el<HTMLUListElement>('list'),
   count: el('count'),
-  sound: el<HTMLButtonElement>('sound'),
   shuffle: el<HTMLButtonElement>('shuffle'),
   clear: el<HTMLButtonElement>('clear'),
   year: el('year'),
@@ -44,7 +42,6 @@ let entries: Entry[] = saved.names.map(name => ({ name, color: COLORS[0] }));
 let history: HistoryItem[] = saved.history;
 
 const wheel = new WheelRenderer(ui.wheel);
-const sfx = new SoundFx(loadSoundOn());
 const confetti = new Confetti(ui.confetti);
 
 // ---------- Utilidades ----------
@@ -188,17 +185,6 @@ ui.input.addEventListener('paste', () =>
   setTimeout(() => { if (/[\n,;]/.test(ui.input.value)) addNames(); }, 0));
 
 // ---------- Botões ----------
-function paintSound(): void {
-  if (sfx.enabled) setButton(ui.sound, 'somLigado', 'Som ligado');
-  else setButton(ui.sound, 'somDesligado', 'Som desligado');
-}
-ui.sound.onclick = () => {
-  sfx.enabled = !sfx.enabled;
-  saveSoundOn(sfx.enabled);
-  paintSound();
-  if (sfx.enabled) sfx.tick();
-};
-
 ui.shuffle.onclick = () => {
   if (wheel.spinning || entries.length < 2) return;
   secureShuffle(entries);
@@ -238,7 +224,6 @@ ui.clear.onclick = () => {
 // ---------- Giro ----------
 function spin(): void {
   if (wheel.spinning || entries.length < 2) return;
-  sfx.unlock();
   const n = entries.length;
   // O vencedor é sorteado aqui, antes da animação; a roleta só gira até ele.
   const plan = planSpin(wheel.rotation, n);
@@ -255,7 +240,6 @@ function spin(): void {
     const idx = indexAtPointer(wheel.rotation, n);
     if (idx !== lastIdx) {
       lastIdx = idx;
-      sfx.tick();
       ui.pointer.classList.remove('tick');
       void ui.pointer.getBoundingClientRect(); // reinicia a animação
       ui.pointer.classList.add('tick');
@@ -285,7 +269,6 @@ function finish(winnerIndex: number): void {
 
   ui.winName.textContent = winner.name;
   ui.overlay.classList.add('show');
-  sfx.win();
   confetti.burst(winner.color);
   updateStatus();
 }
@@ -317,7 +300,6 @@ setInterval(() => {
 
 // ---------- Início ----------
 ui.year.textContent = String(new Date().getFullYear());
-paintSound();
 paintClear();
 setButton(ui.shuffle, 'embaralhar', 'Embaralhar posições');
 refresh();
