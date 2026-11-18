@@ -1,7 +1,8 @@
 import './style.css';
 import { COLORS, MAX_NAME_LENGTH, type Entry, type HistoryItem } from './types';
 import { secureShuffle } from './random';
-import { easeOut, indexAtPointer, planSpin } from './spin';
+import { easeOut, indexAtPointer, mod, planSpin, TAU } from './spin';
+import { winsByName } from './stats';
 import { WheelRenderer } from './wheel';
 import { SoundFx } from './audio';
 import { Confetti } from './confetti';
@@ -29,9 +30,6 @@ const ui = {
   sound: el<HTMLButtonElement>('sound'),
   shuffle: el<HTMLButtonElement>('shuffle'),
   clear: el<HTMLButtonElement>('clear'),
-  podium: el('podium'),
-  hist: el<HTMLOListElement>('hist'),
-  hcount: el('hcount'),
   year: el('year'),
   overlay: el('overlay'),
   winName: el('winName'),
@@ -86,7 +84,8 @@ function renderList(): void {
   entries.forEach((entry, i) => {
     const li = document.createElement('li');
     li.style.animationDelay = `${Math.min(i * 20, 300)}ms`;
-    li.innerHTML = `<span class="dot" style="background:${entry.color};color:${entry.color}"></span><span class="n"></span><button class="x" title="Remover">×</button>`;
+    li.dataset.name = entry.name;
+    li.innerHTML = `<span class="dot" style="background:${entry.color};color:${entry.color}"></span><span class="n"></span><span class="wins" hidden></span><button class="x" title="Remover">×</button>`;
     li.querySelector<HTMLElement>('.n')!.textContent = entry.name;
     li.querySelector<HTMLButtonElement>('.x')!.onclick = () => {
       if (wheel.spinning) return;
@@ -99,36 +98,28 @@ function renderList(): void {
     ui.list.appendChild(li);
   });
   ui.count.textContent = String(entries.length);
+  renderWins();
 }
 
-function renderHistory(): void {
-  // Pódio: 1º no centro, 2º à esquerda, 3º à direita (na ordem em que foram sorteados)
-  ui.podium.innerHTML = '';
-  ([[1, 2], [0, 1], [2, 3]] as const).forEach(([index, place]) => {
-    const h = history[index];
-    if (!h) return;
-    const div = document.createElement('div');
-    div.className = `place p${place}`;
-    div.innerHTML =
-      (place === 1 ? `<span class="crown" aria-hidden="true">${icons.coroa}</span>` : '') +
-      `<span class="pname"></span><span class="ptime">${escapeHtml(h.time)}</span><div class="block">${place}</div>`;
-    div.querySelector<HTMLElement>('.pname')!.textContent = h.name;
-    div.title = `${place}º · ${h.name}`;
-    ui.podium.appendChild(div);
+/**
+ * Placar dentro da lista: mostra ao lado de cada nome quantas vezes ele ganhou.
+ * Atualiza só os selos (sem redesenhar a lista), para não repetir a animação de entrada.
+ */
+function renderWins(): void {
+  const stats = new Map(winsByName(history).map(st => [st.name, st]));
+  const top = Math.max(0, ...[...stats.values()].map(st => st.wins));
+  ui.list.querySelectorAll<HTMLLIElement>('li[data-name]').forEach(li => {
+    const badge = li.querySelector<HTMLElement>('.wins')!;
+    const st = stats.get(li.dataset.name!);
+    if (!st) { badge.hidden = true; return; }
+    badge.hidden = false;
+    badge.classList.toggle('lead', st.wins === top);
+    badge.innerHTML = `${icons.coroa}<b>${st.wins}</b>`;
+    badge.title = `${st.wins} ${st.wins === 1 ? 'vitória' : 'vitórias'} · ${st.pct.toFixed(0)}% dos ${history.length} sorteios`;
   });
-  ui.podium.hidden = history.length === 0;
-
-  // Do 4º em diante: lista simples, sem numeração
-  ui.hist.innerHTML = '';
-  if (!history.length) ui.hist.innerHTML = '<li class="empty">Nenhum sorteio ainda</li>';
-  history.slice(3).forEach(h => {
-    const li = document.createElement('li');
-    li.innerHTML = `<span class="nm"></span><span class="t">${escapeHtml(h.time)}</span>`;
-    li.querySelector<HTMLElement>('.nm')!.textContent = h.name;
-    ui.hist.appendChild(li);
-  });
-  ui.hcount.textContent = String(history.length);
 }
+
+
 
 function updateStatus(): void {
   const n = entries.length;
@@ -147,7 +138,7 @@ function persist(): void {
 function refresh(): void {
   recolor();
   renderList();
-  renderHistory();
+  renderWins();
   updateStatus();
   wheel.draw(entries);
   persist();
@@ -283,11 +274,13 @@ function finish(winnerIndex: number): void {
   if (landed !== winnerIndex) console.warn('LUSM: ponteiro fora do vencedor sorteado', { landed, winnerIndex });
   const winner = entries[landed];
 
+  // Volta a rotação para [0, 2π): mesma posição na tela, mas o número não cresce a cada giro.
+  wheel.rotation = mod(wheel.rotation, TAU);
   wheel.spinning = false;
   ui.wrap.classList.remove('spinning');
   const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   history.push({ name: winner.name, n: history.length + 1, time });
-  renderHistory();
+  renderWins();
   persist();
 
   ui.winName.textContent = winner.name;

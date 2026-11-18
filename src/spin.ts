@@ -8,7 +8,7 @@ import { secureFloat, secureInt } from './random';
 
 export const TAU = Math.PI * 2;
 
-const mod = (a: number, m: number): number => ((a % m) + m) % m;
+export const mod = (a: number, m: number): number => ((a % m) + m) % m;
 
 /** Índice da fatia que está sob o ponteiro para uma dada rotação. */
 export function indexAtPointer(rotation: number, n: number): number {
