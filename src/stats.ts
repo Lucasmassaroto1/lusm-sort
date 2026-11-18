@@ -26,3 +26,28 @@ export function winsByName(history: readonly HistoryItem[], currentNames: readon
     .map(([name, wins]) => ({ name, wins, pct: total ? (wins / total) * 100 : 0 }))
     .sort((a, b) => b.wins - a.wins);
 }
+
+/** Chave usada para comparar nomes: ignora maiúsculas e espaços extras. */
+export const nameKey = (s: string): string => s.trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR');
+
+export interface Duplicate {
+  /** Nome como aparece primeiro na lista. */
+  name: string;
+  /** Quantas fatias esse nome ocupa na roleta. */
+  count: number;
+}
+
+/**
+ * Nomes que aparecem mais de uma vez (ignorando maiúsculas e espaços extras).
+ * Cada repetição é uma fatia a mais, ou seja, mais chance de ganhar.
+ */
+export function findDuplicates(names: readonly string[]): Duplicate[] {
+  const groups = new Map<string, Duplicate>();
+  for (const name of names) {
+    const key = nameKey(name);
+    const g = groups.get(key);
+    if (g) g.count++;
+    else groups.set(key, { name, count: 1 });
+  }
+  return [...groups.values()].filter(g => g.count > 1);
+}

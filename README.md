@@ -1,6 +1,6 @@
 # LUSM - Sorte
 
-Roleta de sorteio honesta, feita em **TypeScript** com **Vite**. Cada nome ocupa uma única fatia (sem nomes repetidos), o sorteado continua na roleta e o resultado é escolhido por um gerador criptográfico.
+Roleta de sorteio honesta, feita em **TypeScript** com **Vite**. Cada nome ocupa uma fatia, o sorteado continua na roleta e o resultado é escolhido por um gerador criptográfico.
 
 ## Como rodar
 
@@ -44,7 +44,7 @@ vercel --prod   # publica no endereço oficial
 1. Ao clicar em **GIRAR**, o vencedor é escolhido **antes** da animação, com `crypto.getRandomValues` e amostragem por rejeição. Cada nome tem exatamente a mesma chance (1 em N).
 2. A roleta calcula quantas voltas dar para parar num ponto aleatório **dentro** da fatia sorteada, longe das bordas, sem empate visual.
 3. O sorteado continua na roleta e ganha um selo de vitórias ao lado do nome (passe o mouse para ver a %); para tirar alguém, clique no × ao lado do nome.
-4. Nomes repetidos (mesmo com maiúsculas ou espaços diferentes) não são aceitos.
+4. Nomes repetidos (mesmo com maiúsculas ou espaços diferentes) são aceitos, mas a roleta avisa: cada repetição é uma fatia a mais e, portanto, mais chance de ganhar.
 
 Os testes em `src/spin.test.ts` confirmam que a roleta sempre para no nome sorteado e que a distribuição é uniforme.
 
