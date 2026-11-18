@@ -46,6 +46,7 @@ vercel --prod   # publica no endereço oficial
 3. O sorteado continua na roleta e ganha um selo de vitórias ao lado do nome (passe o mouse para ver a %); para tirar alguém, clique no × ao lado do nome.
 4. Nomes repetidos (mesmo com maiúsculas ou espaços diferentes) são aceitos, mas a roleta avisa: cada repetição é uma fatia a mais e, portanto, mais chance de ganhar. Só a cópia mais nova pede confirmação: clique no ícone de alerta para manter. Cada item tem seu próprio selo de vitórias.
 5. Qualquer nome pode ser editado pelo lápis ao lado dele (Enter salva, Esc cancela).
+6. Nada é salvo no navegador: ao recarregar ou fechar a página, a lista e as vitórias começam do zero.
 
 Os testes em `src/spin.test.ts` confirmam que a roleta sempre para no nome sorteado e que a distribuição é uniforme.
 
@@ -63,7 +64,6 @@ src/
   spin.ts           matemática do giro (sorteio → ângulo final)
   random.ts         aleatoriedade criptográfica e embaralhamento
   confetti.ts       animação de confete
-  storage.ts        salva nomes e vitórias no navegador
   types.ts          tipos e cores
   style.css         visual
   *.test.ts         testes
