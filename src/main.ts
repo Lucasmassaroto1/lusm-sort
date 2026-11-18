@@ -5,7 +5,6 @@ import { easeOut, indexAtPointer, mod, planSpin, TAU } from './spin';
 import { findDuplicates, nameKey, pendingCopies, winsByEntry } from './stats';
 import { WheelRenderer } from './wheel';
 import { Confetti } from './confetti';
-import { loadState, saveState } from './storage';
 import { icons, setButton } from './icons';
 
 // ---------- Elementos ----------
@@ -37,11 +36,19 @@ const ui = {
 };
 
 // ---------- Estado ----------
-const saved = loadState();
-let entries: Entry[] = saved.entries.map(e => ({ ...e, color: COLORS[0] }));
-let history: HistoryItem[] = saved.history;
+// Nada é salvo no navegador: nomes e vitórias vivem só enquanto a página está aberta.
+let entries: Entry[] = [];
+let history: HistoryItem[] = [];
 /** Próximo id livre: cada nome adicionado é um item novo, mesmo repetido. */
-let nextId = Math.max(0, ...entries.map(e => e.id)) + 1;
+let nextId = 1;
+
+// Apaga o que versões anteriores tinham salvo no navegador.
+try {
+  localStorage.removeItem('lusm-sorte');
+  localStorage.removeItem('lusm-som');
+} catch {
+  /* armazenamento indisponível: nada a apagar */
+}
 /** Desliga a animação de entrada da lista num redesenho (ex.: depois de editar um nome). */
 let animateList = true;
 
@@ -204,9 +211,6 @@ function updateStatus(): void {
   }
 }
 
-function persist(): void {
-  saveState({ entries: entries.map(({ id, name, confirmed }) => ({ id, name, confirmed })), history });
-}
 
 function refresh(): void {
   recolor();
@@ -214,7 +218,6 @@ function refresh(): void {
   renderWins();
   updateStatus();
   wheel.draw(entries);
-  persist();
 }
 
 // ---------- Adicionar nomes ----------
@@ -346,7 +349,6 @@ function finish(winnerIndex: number): void {
   const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   history.push({ name: winner.name, n: history.length + 1, time, entryId: winner.id });
   renderWins();
-  persist();
 
   ui.winName.textContent = winner.name;
   ui.overlay.classList.add('show');
