@@ -156,6 +156,8 @@ ul.names::-webkit-scrollbar-thumb, ol.hist::-webkit-scrollbar-thumb, .panel::-we
 .history { margin-top: 16px; min-width: 0; display: flex; flex-direction: column; flex: 0 1 auto; min-height: auto; }
 .history > h2, .history > .podium { flex: none; }
 ol.hist { list-style: none; flex: 1 1 auto; min-height: 92px; max-height: 160px; overflow-y: auto; overflow-x: hidden; }
+/* Com até 3 resultados tudo fica no pódio: a lista não reserva espaço vazio. */
+ol.hist:empty, ol.hist:has(> .empty) { min-height: 0; }
 .hist li { display: flex; gap: 10px; align-items: center; padding: 7px 4px; border-bottom: 1px dashed var(--line); font-size: 14px; animation: slideIn .4s both; }
 .hist .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hist .t { margin-left: auto; color: var(--muted); font-size: 12px; flex: none; }
