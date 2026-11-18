@@ -3,6 +3,7 @@
  * Função pura, testada em stats.test.ts.
  */
 import type { HistoryItem } from './types';
+import { nameKey } from './text';
 
 export interface WinStat {
   name: string;
@@ -27,8 +28,7 @@ export function winsByName(history: readonly HistoryItem[], currentNames: readon
     .sort((a, b) => b.wins - a.wins);
 }
 
-/** Chave usada para comparar nomes: ignora maiúsculas e espaços extras. */
-export const nameKey = (s: string): string => s.trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR');
+export { nameKey };
 
 export interface Duplicate {
   /** Nome como aparece primeiro na lista. */

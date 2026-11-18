@@ -3,6 +3,7 @@ import { COLORS, MAX_NAME_LENGTH, MAX_NAMES, type Entry, type HistoryItem } from
 import { secureShuffle } from './random';
 import { easeOut, indexAtPointer, mod, planSpin, TAU } from './spin';
 import { findDuplicates, nameKey, pendingCopies, winsByEntry } from './stats';
+import { cleanName, hasVisibleChar, truncate, visibleLength } from './text';
 import { WheelRenderer } from './wheel';
 import { Confetti } from './confetti';
 import { icons, setButton } from './icons';
@@ -146,7 +147,7 @@ function startEdit(li: HTMLLIElement, entry: Entry): void {
   const input = document.createElement('input');
   input.className = 'n-edit';
   input.value = entry.name;
-  input.maxLength = MAX_NAME_LENGTH;
+  input.maxLength = MAX_NAME_LENGTH * 4; // o limite real (em caracteres visíveis) é conferido ao salvar
   input.setAttribute('aria-label', 'Editar nome');
   span.replaceWith(input);
   input.focus();
@@ -156,17 +157,26 @@ function startEdit(li: HTMLLIElement, entry: Entry): void {
   const finish = (save: boolean): void => {
     if (done) return;
     done = true;
-    const name = input.value.trim().replace(/\s+/g, ' ');
-    const changed = save && !!name && name !== entry.name;
+    const name = cleanName(input.value);
+    let error = '';
+    if (save && name && name !== entry.name) {
+      if (!hasVisibleChar(name)) error = 'Nome só com caracteres invisíveis: mantido o anterior.';
+      else if (visibleLength(name) > MAX_NAME_LENGTH) error = `Nome com mais de ${MAX_NAME_LENGTH} caracteres: mantido o anterior.`;
+    }
+    const changed = save && !!name && name !== entry.name && !error;
     if (changed) {
       entry.name = name;
       if (nameKey(name) !== nameKey(li.dataset.name!)) entry.confirmed = false; // nome novo: confirmação não vale mais
     }
     animateList = false;
     refresh();
-    if (changed) {
-      const isCopy = pendingCopies(entries).some(e => e.id === entry.id);
-      showMsg(isCopy ? `"${name}" já existe na lista.` : `Nome alterado para "${name}".`, isCopy ? 'warn' : true);
+    if (error) showMsg(error);
+    else if (changed) {
+      const repeated = entries.some(e => e !== entry && nameKey(e.name) === nameKey(name));
+      showMsg(
+        repeated ? `"${name}" já existe na lista: agora é um nome repetido.` : `Nome alterado para "${name}".`,
+        repeated ? 'warn' : true,
+      );
     }
   };
   input.addEventListener('keydown', e => {
@@ -231,12 +241,23 @@ function autoGrow(): void {
 }
 
 function addNames(): void {
-  if (wheel.spinning) return;
-  const parts = ui.input.value
-    .split(/[\n,;]+/)
-    .map(s => s.trim().replace(/\s+/g, ' '))
-    .filter(Boolean);
-  if (!parts.length) return;
+  if (wheel.spinning) {
+    if (ui.input.value.trim()) showMsg('Espere o giro terminar para adicionar.', 'warn');
+    return;
+  }
+  // Pedaços que a pessoa digitou (ignorando só separadores e espaços comuns).
+  const raw = ui.input.value.split(/[\n,;]+/).filter(s => s.trim() !== '');
+  // Só com caracteres invisíveis não vira fatia (senão alguém "invisível" poderia ganhar).
+  const parts = raw.map(cleanName).filter(s => s && hasVisibleChar(s));
+  const invisible = raw.length - parts.length;
+  if (!parts.length) {
+    if (invisible) {
+      ui.input.value = '';
+      autoGrow();
+      showMsg('Nome vazio ou só com caracteres invisíveis: ignorado.');
+    }
+    return;
+  }
   if (entries.length >= MAX_NAMES) {
     showMsg(`Limite de ${MAX_NAMES} nomes atingido. Remova alguém para adicionar outro.`);
     return;
@@ -249,7 +270,7 @@ function addNames(): void {
   let added = 0;
   for (const p of parts) {
     if (entries.length >= MAX_NAMES) { leftover.push(p); continue; }
-    if (p.length > MAX_NAME_LENGTH) { ignored.push(p.slice(0, 20) + '…'); continue; }
+    if (visibleLength(p) > MAX_NAME_LENGTH) { ignored.push(truncate(p, 20)); continue; }
     // Nome repetido é aceito (ganha outra fatia), mas o usuário é avisado.
     const key = nameKey(p);
     if (existing.has(key)) repeated.push(p);
@@ -261,10 +282,12 @@ function addNames(): void {
   autoGrow();
   refresh();
   const list = (xs: string[]): string => xs.slice(0, 4).join(', ') + (xs.length > 4 ? '…' : '');
-  if (leftover.length) {
+  if (invisible) {
+    showMsg(`${invisible} ${invisible === 1 ? 'nome vazio ou invisível foi ignorado' : 'nomes vazios ou invisíveis foram ignorados'}.`, 'warn');
+  } else if (leftover.length) {
     showMsg(`Limite de ${MAX_NAMES} nomes: ${added} adicionados, ${leftover.length} ficaram de fora.`, 'warn');
   } else if (ignored.length) {
-    showMsg(`Ignorado (muito longo): ${list(ignored)}`);
+    showMsg(`Ignorado (mais de ${MAX_NAME_LENGTH} caracteres): ${list(ignored)}`);
   } else if (repeated.length) {
     showMsg(`Nome repetido: ${list([...new Set(repeated)])}. Cada repetição é uma fatia a mais e mais chance de ganhar.`, 'warn');
   } else if (added > 1) {
@@ -398,4 +421,4 @@ ui.year.textContent = String(new Date().getFullYear());
 paintClear();
 setButton(ui.shuffle, 'embaralhar', 'Embaralhar posições');
 refresh();
-void document.fonts?.ready.then(() => wheel.draw(entries));
+void document.fonts?.ready.then(() => { wheel.invalidate(); wheel.draw(entries); });
