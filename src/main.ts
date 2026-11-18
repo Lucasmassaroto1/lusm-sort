@@ -40,6 +40,13 @@ const ui = {
 const saved = loadState();
 let entries: Entry[] = saved.names.map(name => ({ name, color: COLORS[0] }));
 let history: HistoryItem[] = saved.history;
+/** Repetições que o usuário confirmou clicando no alerta: não mostram mais aviso. */
+const confirmedDups = new Set<string>(saved.confirmed);
+/** Desliga a animação de entrada da lista num redesenho (ex.: depois de editar um nome). */
+let animateList = true;
+
+/** Repetições que ainda não foram confirmadas. */
+const pendingDups = () => findDuplicates(entries.map(e => e.name)).filter(d => !confirmedDups.has(nameKey(d.name)));
 
 const wheel = new WheelRenderer(ui.wheel);
 const confetti = new Confetti(ui.confetti);
@@ -75,20 +82,28 @@ function recolor(): void {
 
 // ---------- Render ----------
 function renderList(): void {
-  const dupCount = new Map(findDuplicates(entries.map(e => e.name)).map(d => [nameKey(d.name), d.count]));
+  const dupCount = new Map(pendingDups().map(d => [nameKey(d.name), d.count]));
   ui.list.innerHTML = '';
   if (!entries.length) ui.list.innerHTML = '<li class="empty">Nenhum nome ainda</li>';
   entries.forEach((entry, i) => {
     const li = document.createElement('li');
-    li.style.animationDelay = `${Math.min(i * 20, 300)}ms`;
+    if (animateList) li.style.animationDelay = `${Math.min(i * 20, 300)}ms`;
+    else li.style.animation = 'none';
     li.dataset.name = entry.name;
     const dups = dupCount.get(nameKey(entry.name));
     li.innerHTML =
       `<span class="dot" style="background:${entry.color};color:${entry.color}"></span><span class="n"></span>` +
-      (dups ? `<span class="dup" title="Nome repetido: aparece ${dups} vezes na roleta (${dups} fatias, mais chance de ganhar)">${icons.alerta}</span>` : '') +
+      (dups
+        ? `<button class="dup" title="Nome repetido (${dups}× na roleta, mais chance de ganhar). Clique para manter assim.">${icons.alerta}</button>` +
+          `<button class="edit" title="Editar este nome">${icons.lapis}</button>`
+        : '') +
       `<span class="wins" hidden></span><button class="x" title="Remover">×</button>`;
     if (dups) li.classList.add('is-dup');
     li.querySelector<HTMLElement>('.n')!.textContent = entry.name;
+    if (dups) {
+      li.querySelector<HTMLButtonElement>('.dup')!.onclick = () => confirmDup(entry);
+      li.querySelector<HTMLButtonElement>('.edit')!.onclick = () => startEdit(li, entry);
+    }
     li.querySelector<HTMLButtonElement>('.x')!.onclick = () => {
       if (wheel.spinning) return;
       li.classList.add('out');
@@ -100,7 +115,52 @@ function renderList(): void {
     ui.list.appendChild(li);
   });
   ui.count.textContent = String(entries.length);
+  animateList = true;
   renderWins();
+}
+
+/** Clicou no alerta: a repetição é intencional, some o aviso desse nome. */
+function confirmDup(entry: Entry): void {
+  if (wheel.spinning) return;
+  confirmedDups.add(nameKey(entry.name));
+  animateList = false;
+  refresh();
+  showMsg(`Repetição de "${entry.name}" mantida.`, true);
+}
+
+/** Clicou no lápis: troca o nome por um campo de edição só para este item. */
+function startEdit(li: HTMLLIElement, entry: Entry): void {
+  if (wheel.spinning || li.classList.contains('editing')) return;
+  li.classList.add('editing');
+  const span = li.querySelector<HTMLElement>('.n')!;
+  const input = document.createElement('input');
+  input.className = 'n-edit';
+  input.value = entry.name;
+  input.maxLength = MAX_NAME_LENGTH;
+  input.setAttribute('aria-label', 'Editar nome');
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+
+  let done = false;
+  const finish = (save: boolean): void => {
+    if (done) return;
+    done = true;
+    const name = input.value.trim().replace(/\s+/g, ' ');
+    if (save && name && name !== entry.name) entry.name = name;
+    animateList = false;
+    refresh();
+    if (save && name && nameKey(name) !== nameKey(li.dataset.name!)) {
+      const stillDup = pendingDups().some(d => nameKey(d.name) === nameKey(name));
+      showMsg(stillDup ? `"${name}" também já existe na lista.` : `Nome alterado para "${name}".`, stillDup ? 'warn' : true);
+    }
+  };
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+    if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    e.stopPropagation(); // espaço não gira a roleta enquanto edita
+  });
+  input.addEventListener('blur', () => finish(true));
 }
 
 /**
@@ -136,7 +196,7 @@ function updateStatus(): void {
   else if (n === 0) ui.status.innerHTML = 'Adicione pelo menos <b>2 nomes</b> para girar.';
   else if (n === 1) ui.status.innerHTML = `Só resta <b>${escapeHtml(entries[0].name)}</b>. Adicione mais nomes para girar.`;
   else {
-    const dups = findDuplicates(entries.map(e => e.name));
+    const dups = pendingDups();
     ui.status.innerHTML = dups.length
       ? `<span class="warn">${icons.alerta} Nome repetido: ` +
         dups.slice(0, 3).map(d => `<b>${escapeHtml(d.name)}</b> (${d.count}×)`).join(', ') +
@@ -146,7 +206,10 @@ function updateStatus(): void {
 }
 
 function persist(): void {
-  saveState({ names: entries.map(e => e.name), history });
+  // Esquece confirmações de nomes que não estão mais repetidos.
+  const stillDup = new Set(findDuplicates(entries.map(e => e.name)).map(d => nameKey(d.name)));
+  for (const k of [...confirmedDups]) if (!stillDup.has(k)) confirmedDups.delete(k);
+  saveState({ names: entries.map(e => e.name), history, confirmed: [...confirmedDups] });
 }
 
 function refresh(): void {
@@ -180,7 +243,7 @@ function addNames(): void {
     if (p.length > MAX_NAME_LENGTH) { ignored.push(p.slice(0, 20) + '…'); continue; }
     // Nome repetido é aceito (ganha outra fatia), mas o usuário é avisado.
     const key = nameKey(p);
-    if (existing.has(key)) repeated.push(p);
+    if (existing.has(key)) { repeated.push(p); confirmedDups.delete(key); }
     existing.add(key);
     entries.push({ name: p, color: COLORS[0] });
     added++;
