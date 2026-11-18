@@ -1,7 +1,6 @@
 import type { HistoryItem } from './types';
 
 const KEY = 'lusm-sorte';
-const SOUND_KEY = 'lusm-som';
 
 export interface SavedState {
   names: string[];
@@ -27,21 +26,5 @@ export function saveState(state: SavedState): void {
     localStorage.setItem(KEY, JSON.stringify(state));
   } catch {
     /* armazenamento indisponível: segue sem salvar */
-  }
-}
-
-export function loadSoundOn(): boolean {
-  try {
-    return localStorage.getItem(SOUND_KEY) !== '0';
-  } catch {
-    return true;
-  }
-}
-
-export function saveSoundOn(on: boolean): void {
-  try {
-    localStorage.setItem(SOUND_KEY, on ? '1' : '0');
-  } catch {
-    /* ignora */
   }
 }

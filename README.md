@@ -61,9 +61,8 @@ src/
   wheel.ts          desenho da roleta no canvas
   spin.ts           matemática do giro (sorteio → ângulo final)
   random.ts         aleatoriedade criptográfica e embaralhamento
-  audio.ts          sons gerados com Web Audio
   confetti.ts       animação de confete
-  storage.ts        salva nomes, vitórias e som no navegador
+  storage.ts        salva nomes e vitórias no navegador
   types.ts          tipos e cores
   style.css         visual
   *.test.ts         testes
