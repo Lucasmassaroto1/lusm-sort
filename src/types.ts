@@ -21,3 +21,6 @@ export const COLORS = [
 ] as const;
 
 export const MAX_NAME_LENGTH = 40;
+
+/** Máximo de nomes na roleta: acima disso as fatias ficam finas demais para ler. */
+export const MAX_NAMES = 100;

@@ -1,5 +1,5 @@
 import './style.css';
-import { COLORS, MAX_NAME_LENGTH, type Entry, type HistoryItem } from './types';
+import { COLORS, MAX_NAME_LENGTH, MAX_NAMES, type Entry, type HistoryItem } from './types';
 import { secureShuffle } from './random';
 import { easeOut, indexAtPointer, mod, planSpin, TAU } from './spin';
 import { findDuplicates, nameKey, pendingCopies, winsByEntry } from './stats';
@@ -120,7 +120,11 @@ function renderList(): void {
     };
     ui.list.appendChild(li);
   });
-  ui.count.textContent = String(entries.length);
+  ui.count.textContent = `${entries.length}/${MAX_NAMES}`;
+  ui.count.classList.toggle('full', entries.length >= MAX_NAMES);
+  const full = entries.length >= MAX_NAMES;
+  ui.addBtn.disabled = full;
+  ui.input.placeholder = full ? `Limite de ${MAX_NAMES} nomes atingido` : 'Digite um nome e aperte Enter';
   animateList = true;
   renderWins();
 }
@@ -233,12 +237,18 @@ function addNames(): void {
     .map(s => s.trim().replace(/\s+/g, ' '))
     .filter(Boolean);
   if (!parts.length) return;
+  if (entries.length >= MAX_NAMES) {
+    showMsg(`Limite de ${MAX_NAMES} nomes atingido. Remova alguém para adicionar outro.`);
+    return;
+  }
 
   const existing = new Set(entries.map(e => nameKey(e.name)));
   const ignored: string[] = [];
   const repeated: string[] = [];
+  const leftover: string[] = [];
   let added = 0;
   for (const p of parts) {
+    if (entries.length >= MAX_NAMES) { leftover.push(p); continue; }
     if (p.length > MAX_NAME_LENGTH) { ignored.push(p.slice(0, 20) + '…'); continue; }
     // Nome repetido é aceito (ganha outra fatia), mas o usuário é avisado.
     const key = nameKey(p);
@@ -251,7 +261,9 @@ function addNames(): void {
   autoGrow();
   refresh();
   const list = (xs: string[]): string => xs.slice(0, 4).join(', ') + (xs.length > 4 ? '…' : '');
-  if (ignored.length) {
+  if (leftover.length) {
+    showMsg(`Limite de ${MAX_NAMES} nomes: ${added} adicionados, ${leftover.length} ficaram de fora.`, 'warn');
+  } else if (ignored.length) {
     showMsg(`Ignorado (muito longo): ${list(ignored)}`);
   } else if (repeated.length) {
     showMsg(`Nome repetido: ${list([...new Set(repeated)])}. Cada repetição é uma fatia a mais e mais chance de ganhar.`, 'warn');
