@@ -1,12 +1,18 @@
 export interface Entry {
+  /** Identidade do item: dois nomes iguais são itens diferentes. Maior id = adicionado depois. */
+  id: number;
   name: string;
   color: string;
+  /** Cópia repetida confirmada pelo usuário (não pede mais confirmação). */
+  confirmed?: boolean;
 }
 
 export interface HistoryItem {
   name: string;
   n: number;
   time: string;
+  /** Item que ganhou (sorteios antigos não têm). */
+  entryId?: number;
 }
 
 export const COLORS = [

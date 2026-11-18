@@ -44,7 +44,8 @@ vercel --prod   # publica no endereço oficial
 1. Ao clicar em **GIRAR**, o vencedor é escolhido **antes** da animação, com `crypto.getRandomValues` e amostragem por rejeição. Cada nome tem exatamente a mesma chance (1 em N).
 2. A roleta calcula quantas voltas dar para parar num ponto aleatório **dentro** da fatia sorteada, longe das bordas, sem empate visual.
 3. O sorteado continua na roleta e ganha um selo de vitórias ao lado do nome (passe o mouse para ver a %); para tirar alguém, clique no × ao lado do nome.
-4. Nomes repetidos (mesmo com maiúsculas ou espaços diferentes) são aceitos, mas a roleta avisa: cada repetição é uma fatia a mais e, portanto, mais chance de ganhar. No item repetido, o lápis edita só aquele nome e o ícone de alerta confirma que a repetição é intencional (o aviso some).
+4. Nomes repetidos (mesmo com maiúsculas ou espaços diferentes) são aceitos, mas a roleta avisa: cada repetição é uma fatia a mais e, portanto, mais chance de ganhar. Só a cópia mais nova pede confirmação: clique no ícone de alerta para manter. Cada item tem seu próprio selo de vitórias.
+5. Qualquer nome pode ser editado pelo lápis ao lado dele (Enter salva, Esc cancela).
 
 Os testes em `src/spin.test.ts` confirmam que a roleta sempre para no nome sorteado e que a distribuição é uniforme.
 
