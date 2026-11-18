@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { winsByName } from './stats';
+import { findDuplicates, winsByName } from './stats';
 import type { HistoryItem } from './types';
 
 const h = (...names: string[]): HistoryItem[] => names.map((name, i) => ({ name, n: i + 1, time: '00:00:00' }));
@@ -33,5 +33,18 @@ describe('winsByName', () => {
   it('as porcentagens somam 100', () => {
     const stats = winsByName(h('A', 'B', 'C', 'A', 'B', 'A', 'C'));
     expect(stats.reduce((s, x) => s + x.pct, 0)).toBeCloseTo(100);
+  });
+});
+
+describe('findDuplicates', () => {
+  it('acha nomes repetidos ignorando maiúsculas e espaços', () => {
+    expect(findDuplicates(['Ana', 'Bia', ' ana ', 'ANA', 'Caio', 'bia'])).toEqual([
+      { name: 'Ana', count: 3 },
+      { name: 'Bia', count: 2 },
+    ]);
+  });
+
+  it('sem repetidos, devolve lista vazia', () => {
+    expect(findDuplicates(['Ana', 'Bia', 'Ana Paula'])).toEqual([]);
   });
 });

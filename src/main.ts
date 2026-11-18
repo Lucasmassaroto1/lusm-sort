@@ -2,7 +2,7 @@ import './style.css';
 import { COLORS, MAX_NAME_LENGTH, type Entry, type HistoryItem } from './types';
 import { secureShuffle } from './random';
 import { easeOut, indexAtPointer, mod, planSpin, TAU } from './spin';
-import { winsByName } from './stats';
+import { findDuplicates, nameKey, winsByName } from './stats';
 import { WheelRenderer } from './wheel';
 import { Confetti } from './confetti';
 import { loadState, saveState } from './storage';
@@ -45,17 +45,16 @@ const wheel = new WheelRenderer(ui.wheel);
 const confetti = new Confetti(ui.confetti);
 
 // ---------- Utilidades ----------
-const normalize = (s: string): string => s.trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR');
 
 const escapeHtml = (s: string): string =>
   s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
 let msgTimer: number | undefined;
-function showMsg(text: string, ok = false): void {
+function showMsg(text: string, kind: boolean | 'warn' = false): void {
   ui.msg.textContent = text;
-  ui.msg.className = 'msg' + (ok ? ' ok' : '');
+  ui.msg.className = 'msg' + (kind === 'warn' ? ' warn' : kind ? ' ok' : '');
   clearTimeout(msgTimer);
-  msgTimer = window.setTimeout(() => (ui.msg.textContent = ''), 3500);
+  msgTimer = window.setTimeout(() => (ui.msg.textContent = ''), kind === 'warn' ? 6000 : 3500);
 }
 
 /** Cores em sequência, evitando duas fatias vizinhas iguais (inclusive a última com a primeira). */
@@ -76,13 +75,19 @@ function recolor(): void {
 
 // ---------- Render ----------
 function renderList(): void {
+  const dupCount = new Map(findDuplicates(entries.map(e => e.name)).map(d => [nameKey(d.name), d.count]));
   ui.list.innerHTML = '';
   if (!entries.length) ui.list.innerHTML = '<li class="empty">Nenhum nome ainda</li>';
   entries.forEach((entry, i) => {
     const li = document.createElement('li');
     li.style.animationDelay = `${Math.min(i * 20, 300)}ms`;
     li.dataset.name = entry.name;
-    li.innerHTML = `<span class="dot" style="background:${entry.color};color:${entry.color}"></span><span class="n"></span><span class="wins" hidden></span><button class="x" title="Remover">×</button>`;
+    const dups = dupCount.get(nameKey(entry.name));
+    li.innerHTML =
+      `<span class="dot" style="background:${entry.color};color:${entry.color}"></span><span class="n"></span>` +
+      (dups ? `<span class="dup" title="Nome repetido: aparece ${dups} vezes na roleta (${dups} fatias, mais chance de ganhar)">${icons.alerta}</span>` : '') +
+      `<span class="wins" hidden></span><button class="x" title="Remover">×</button>`;
+    if (dups) li.classList.add('is-dup');
     li.querySelector<HTMLElement>('.n')!.textContent = entry.name;
     li.querySelector<HTMLButtonElement>('.x')!.onclick = () => {
       if (wheel.spinning) return;
@@ -103,11 +108,16 @@ function renderList(): void {
  * Atualiza só os selos (sem redesenhar a lista), para não repetir a animação de entrada.
  */
 function renderWins(): void {
-  const stats = new Map(winsByName(history).map(st => [st.name, st]));
+  // Agrupa por nameKey: "Ana" e "ana" são a mesma pessoa e somam as vitórias.
+  const stats = new Map<string, { wins: number; pct: number }>();
+  for (const st of winsByName(history)) {
+    const cur = stats.get(nameKey(st.name)) ?? { wins: 0, pct: 0 };
+    stats.set(nameKey(st.name), { wins: cur.wins + st.wins, pct: cur.pct + st.pct });
+  }
   const top = Math.max(0, ...[...stats.values()].map(st => st.wins));
   ui.list.querySelectorAll<HTMLLIElement>('li[data-name]').forEach(li => {
     const badge = li.querySelector<HTMLElement>('.wins')!;
-    const st = stats.get(li.dataset.name!);
+    const st = stats.get(nameKey(li.dataset.name!));
     if (!st) { badge.hidden = true; return; }
     badge.hidden = false;
     badge.classList.toggle('lead', st.wins === top);
@@ -125,7 +135,14 @@ function updateStatus(): void {
   if (wheel.spinning) ui.status.innerHTML = `Girando… boa sorte! ${icons.trevo}`;
   else if (n === 0) ui.status.innerHTML = 'Adicione pelo menos <b>2 nomes</b> para girar.';
   else if (n === 1) ui.status.innerHTML = `Só resta <b>${escapeHtml(entries[0].name)}</b>. Adicione mais nomes para girar.`;
-  else ui.status.innerHTML = '';
+  else {
+    const dups = findDuplicates(entries.map(e => e.name));
+    ui.status.innerHTML = dups.length
+      ? `<span class="warn">${icons.alerta} Nome repetido: ` +
+        dups.slice(0, 3).map(d => `<b>${escapeHtml(d.name)}</b> (${d.count}×)`).join(', ') +
+        (dups.length > 3 ? '…' : '') + ' — mais chance de ganhar.</span>'
+      : '';
+  }
 }
 
 function persist(): void {
@@ -155,13 +172,15 @@ function addNames(): void {
     .filter(Boolean);
   if (!parts.length) return;
 
-  const existing = new Set(entries.map(e => normalize(e.name)));
+  const existing = new Set(entries.map(e => nameKey(e.name)));
   const ignored: string[] = [];
+  const repeated: string[] = [];
   let added = 0;
   for (const p of parts) {
-    const key = normalize(p);
-    if (existing.has(key)) { ignored.push(p); continue; }
     if (p.length > MAX_NAME_LENGTH) { ignored.push(p.slice(0, 20) + '…'); continue; }
+    // Nome repetido é aceito (ganha outra fatia), mas o usuário é avisado.
+    const key = nameKey(p);
+    if (existing.has(key)) repeated.push(p);
     existing.add(key);
     entries.push({ name: p, color: COLORS[0] });
     added++;
@@ -169,8 +188,11 @@ function addNames(): void {
   ui.input.value = '';
   autoGrow();
   refresh();
+  const list = (xs: string[]): string => xs.slice(0, 4).join(', ') + (xs.length > 4 ? '…' : '');
   if (ignored.length) {
-    showMsg(`Ignorado (já existe ou muito longo): ${ignored.slice(0, 4).join(', ')}${ignored.length > 4 ? '…' : ''}`);
+    showMsg(`Ignorado (muito longo): ${list(ignored)}`);
+  } else if (repeated.length) {
+    showMsg(`Nome repetido: ${list([...new Set(repeated)])}. Cada repetição é uma fatia a mais e mais chance de ganhar.`, 'warn');
   } else if (added > 1) {
     showMsg(`${added} nomes adicionados!`, true);
   }
