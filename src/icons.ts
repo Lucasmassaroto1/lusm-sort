@@ -7,8 +7,9 @@ import limpar from './assets/icons/limpar.svg?raw';
 import alerta from './assets/icons/alerta.svg?raw';
 import trevo from './assets/icons/trevo.svg?raw';
 import coroa from './assets/icons/coroa.svg?raw';
+import lapis from './assets/icons/lapis.svg?raw';
 
-export const icons = { embaralhar, limpar, alerta, trevo, coroa } as const;
+export const icons = { embaralhar, limpar, alerta, trevo, coroa, lapis } as const;
 export type IconName = keyof typeof icons;
 
 /** Coloca ícone + texto dentro de um botão. */
