@@ -31,10 +31,6 @@ const ui = {
   shuffle: el<HTMLButtonElement>('shuffle'),
   clear: el<HTMLButtonElement>('clear'),
   podium: el('podium'),
-  stats: el('stats'),
-  htabs: el('htabs'),
-  tabHist: el<HTMLButtonElement>('tabHist'),
-  tabStats: el<HTMLButtonElement>('tabStats'),
   hist: el<HTMLOListElement>('hist'),
   hcount: el('hcount'),
   year: el('year'),
@@ -91,7 +87,8 @@ function renderList(): void {
   entries.forEach((entry, i) => {
     const li = document.createElement('li');
     li.style.animationDelay = `${Math.min(i * 20, 300)}ms`;
-    li.innerHTML = `<span class="dot" style="background:${entry.color};color:${entry.color}"></span><span class="n"></span><button class="x" title="Remover">×</button>`;
+    li.dataset.name = entry.name;
+    li.innerHTML = `<span class="dot" style="background:${entry.color};color:${entry.color}"></span><span class="n"></span><span class="wins" hidden></span><button class="x" title="Remover">×</button>`;
     li.querySelector<HTMLElement>('.n')!.textContent = entry.name;
     li.querySelector<HTMLButtonElement>('.x')!.onclick = () => {
       if (wheel.spinning) return;
@@ -104,6 +101,25 @@ function renderList(): void {
     ui.list.appendChild(li);
   });
   ui.count.textContent = String(entries.length);
+  renderWins();
+}
+
+/**
+ * Placar dentro da lista: mostra ao lado de cada nome quantas vezes ele ganhou.
+ * Atualiza só os selos (sem redesenhar a lista), para não repetir a animação de entrada.
+ */
+function renderWins(): void {
+  const stats = new Map(winsByName(history).map(st => [st.name, st]));
+  const top = Math.max(0, ...[...stats.values()].map(st => st.wins));
+  ui.list.querySelectorAll<HTMLLIElement>('li[data-name]').forEach(li => {
+    const badge = li.querySelector<HTMLElement>('.wins')!;
+    const st = stats.get(li.dataset.name!);
+    if (!st) { badge.hidden = true; return; }
+    badge.hidden = false;
+    badge.classList.toggle('lead', st.wins === top);
+    badge.innerHTML = `${icons.coroa}<b>${st.wins}</b>`;
+    badge.title = `${st.wins} ${st.wins === 1 ? 'vitória' : 'vitórias'} · ${st.pct.toFixed(0)}% dos ${history.length} sorteios`;
+  });
 }
 
 function renderHistory(): void {
@@ -133,51 +149,9 @@ function renderHistory(): void {
     ui.hist.appendChild(li);
   });
   ui.hcount.textContent = String(history.length);
-  renderStats();
+  renderWins();
 }
 
-function showTab(t: 'hist' | 'stats'): void {
-  ui.hist.hidden = t !== 'hist';
-  ui.stats.hidden = t !== 'stats';
-  ui.tabHist.classList.toggle('on', t === 'hist');
-  ui.tabStats.classList.toggle('on', t === 'stats');
-  ui.tabHist.setAttribute('aria-selected', String(t === 'hist'));
-  ui.tabStats.setAttribute('aria-selected', String(t === 'stats'));
-}
-ui.tabHist.onclick = () => showTab('hist');
-ui.tabStats.onclick = () => showTab('stats');
-
-/** Placar: quantas vezes cada nome ganhou e a % sobre o total de sorteios. */
-function renderStats(): void {
-  ui.stats.innerHTML = '';
-  ui.htabs.hidden = history.length === 0;
-  if (!history.length) showTab('hist');
-  if (!history.length) return;
-
-  const stats = winsByName(history, entries.map(e => e.name));
-  const max = Math.max(...stats.map(s => s.wins), 1);
-  const colorOf = new Map(entries.map(e => [e.name, e.color]));
-
-  const title = document.createElement('div');
-  title.className = 'stats-title';
-  title.textContent = `Vitórias em ${history.length} ${history.length === 1 ? 'sorteio' : 'sorteios'}`;
-  ui.stats.appendChild(title);
-
-  for (const s of stats) {
-    const row = document.createElement('div');
-    row.className = 'srow' + (colorOf.has(s.name) ? '' : ' gone');
-    row.title = colorOf.has(s.name) ? s.name : `${s.name} (fora da roleta)`;
-    row.innerHTML =
-      `<span class="sname"></span>` +
-      `<span class="sbar"><span class="sfill"></span></span>` +
-      `<span class="snum">${s.wins} <small>${s.pct.toFixed(0)}%</small></span>`;
-    row.querySelector<HTMLElement>('.sname')!.textContent = s.name;
-    const fill = row.querySelector<HTMLElement>('.sfill')!;
-    fill.style.width = `${(s.wins / max) * 100}%`;
-    fill.style.background = colorOf.get(s.name) ?? 'var(--muted)';
-    ui.stats.appendChild(row);
-  }
-}
 
 function updateStatus(): void {
   const n = entries.length;
