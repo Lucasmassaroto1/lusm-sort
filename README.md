@@ -43,7 +43,7 @@ vercel --prod   # publica no endereço oficial
 
 1. Ao clicar em **GIRAR**, o vencedor é escolhido **antes** da animação, com `crypto.getRandomValues` e amostragem por rejeição. Cada nome tem exatamente a mesma chance (1 em N).
 2. A roleta calcula quantas voltas dar para parar num ponto aleatório **dentro** da fatia sorteada, longe das bordas, sem empate visual.
-3. O sorteado continua na roleta e fica registrado em **Resultados**; para tirar alguém, clique no × ao lado do nome.
+3. O sorteado continua na roleta e ganha um selo de vitórias ao lado do nome (passe o mouse para ver a %); para tirar alguém, clique no × ao lado do nome.
 4. Nomes repetidos (mesmo com maiúsculas ou espaços diferentes) não são aceitos.
 
 Os testes em `src/spin.test.ts` confirmam que a roleta sempre para no nome sorteado e que a distribuição é uniforme.
@@ -56,23 +56,24 @@ public/             favicons
 src/
   assets/           ponteiro e ícones em SVG
   main.ts           interface: lista, botões, giro, resultado
+  stats.ts          contagem de vitórias por nome
   icons.ts          carrega os ícones SVG nos botões
   wheel.ts          desenho da roleta no canvas
   spin.ts           matemática do giro (sorteio → ângulo final)
   random.ts         aleatoriedade criptográfica e embaralhamento
   audio.ts          sons gerados com Web Audio
   confetti.ts       animação de confete
-  storage.ts        salva nomes, resultados e som no navegador
+  storage.ts        salva nomes, vitórias e som no navegador
   types.ts          tipos e cores
   style.css         visual
-  spin.test.ts      testes
+  *.test.ts         testes
 ```
 
 ## Imagens
 
 - `public/favicon.ico`, `public/favicon.svg`: ícone da aba do navegador
 - `src/assets/pointer.svg`: ponteiro da roleta
-- `src/assets/icons/`: ícones dos botões, do troféu, da coroa do pódio e do trevo (SVG)
+- `src/assets/icons/`: ícones dos botões, do troféu, da coroa das vitórias e do trevo (SVG)
 
 ---
 

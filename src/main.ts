@@ -30,9 +30,6 @@ const ui = {
   sound: el<HTMLButtonElement>('sound'),
   shuffle: el<HTMLButtonElement>('shuffle'),
   clear: el<HTMLButtonElement>('clear'),
-  podium: el('podium'),
-  hist: el<HTMLOListElement>('hist'),
-  hcount: el('hcount'),
   year: el('year'),
   overlay: el('overlay'),
   winName: el('winName'),
@@ -122,35 +119,6 @@ function renderWins(): void {
   });
 }
 
-function renderHistory(): void {
-  // Pódio: 1º no centro, 2º à esquerda, 3º à direita (na ordem em que foram sorteados)
-  ui.podium.innerHTML = '';
-  ([[1, 2], [0, 1], [2, 3]] as const).forEach(([index, place]) => {
-    const h = history[index];
-    if (!h) return;
-    const div = document.createElement('div');
-    div.className = `place p${place}`;
-    div.innerHTML =
-      (place === 1 ? `<span class="crown" aria-hidden="true">${icons.coroa}</span>` : '') +
-      `<span class="pname"></span><span class="ptime">${escapeHtml(h.time)}</span><div class="block">${place}</div>`;
-    div.querySelector<HTMLElement>('.pname')!.textContent = h.name;
-    div.title = `${place}º · ${h.name}`;
-    ui.podium.appendChild(div);
-  });
-  ui.podium.hidden = history.length === 0;
-
-  // Do 4º em diante: lista simples, sem numeração
-  ui.hist.innerHTML = '';
-  if (!history.length) ui.hist.innerHTML = '<li class="empty">Nenhum sorteio ainda</li>';
-  history.slice(3).forEach(h => {
-    const li = document.createElement('li');
-    li.innerHTML = `<span class="nm"></span><span class="t">${escapeHtml(h.time)}</span>`;
-    li.querySelector<HTMLElement>('.nm')!.textContent = h.name;
-    ui.hist.appendChild(li);
-  });
-  ui.hcount.textContent = String(history.length);
-  renderWins();
-}
 
 
 function updateStatus(): void {
@@ -170,7 +138,7 @@ function persist(): void {
 function refresh(): void {
   recolor();
   renderList();
-  renderHistory();
+  renderWins();
   updateStatus();
   wheel.draw(entries);
   persist();
@@ -312,7 +280,7 @@ function finish(winnerIndex: number): void {
   ui.wrap.classList.remove('spinning');
   const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   history.push({ name: winner.name, n: history.length + 1, time });
-  renderHistory();
+  renderWins();
   persist();
 
   ui.winName.textContent = winner.name;
