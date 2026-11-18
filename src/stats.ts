@@ -51,3 +51,45 @@ export function findDuplicates(names: readonly string[]): Duplicate[] {
   }
   return [...groups.values()].filter(g => g.count > 1);
 }
+
+/** Item da lista com identidade própria (dois "Ana" são itens diferentes). */
+export interface ListItem {
+  id: number;
+  name: string;
+  /** O usuário confirmou que esta cópia repetida é intencional. */
+  confirmed?: boolean;
+}
+
+/**
+ * Cópias repetidas: em cada grupo de nomes iguais, o item mais antigo (menor id) é o original
+ * e os demais são cópias. Só as cópias ainda não confirmadas pedem confirmação.
+ */
+export function pendingCopies<T extends ListItem>(items: readonly T[]): T[] {
+  const original = new Map<string, number>();
+  for (const it of items) {
+    const k = nameKey(it.name);
+    const cur = original.get(k);
+    if (cur === undefined || it.id < cur) original.set(k, it.id);
+  }
+  return items.filter(it => original.get(nameKey(it.name)) !== it.id && !it.confirmed);
+}
+
+/**
+ * Vitórias de cada item (por id), para que nomes repetidos tenham selos separados.
+ * Sorteios antigos, salvos antes de existir id, contam para o item mais antigo com aquele nome.
+ */
+export function winsByEntry(history: readonly HistoryItem[], items: readonly ListItem[]): Map<number, number> {
+  const wins = new Map<number, number>();
+  const ids = new Set(items.map(it => it.id));
+  const oldest = new Map<string, number>();
+  for (const it of items) {
+    const k = nameKey(it.name);
+    const cur = oldest.get(k);
+    if (cur === undefined || it.id < cur) oldest.set(k, it.id);
+  }
+  for (const h of history) {
+    const id = h.entryId !== undefined ? h.entryId : oldest.get(nameKey(h.name));
+    if (id !== undefined && ids.has(id)) wins.set(id, (wins.get(id) ?? 0) + 1);
+  }
+  return wins;
+}
