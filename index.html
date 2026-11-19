@@ -49,6 +49,13 @@
       <img class="trophy" src="/src/assets/icons/trofeu.svg" alt="" width="72" height="72">
       <div class="lbl">O sorteado é</div>
       <div class="win" id="winName">—</div>
+      <div class="vid" id="vidBox" hidden>
+        <video id="vidPreview" muted playsinline loop></video>
+        <div class="vid-side">
+          <span class="vid-status" id="vidStatus">Gravando o resultado…</span>
+          <a class="btn ghost vid-dl" id="vidDownload" aria-disabled="true">Baixar vídeo</a>
+        </div>
+      </div>
       <div class="row">
         <button class="btn" id="again">Girar de novo</button>
         <button class="btn ghost" id="close">Fechar</button>

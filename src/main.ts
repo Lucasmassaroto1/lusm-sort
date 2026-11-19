@@ -4,6 +4,7 @@ import { secureShuffle } from './random';
 import { easeOut, indexAtPointer, mod, planSpin, TAU } from './spin';
 import { findDuplicates, nameKey, pendingCopies, winsByEntry } from './stats';
 import { cleanName, hasVisibleChar, truncate, visibleLength } from './text';
+import { SpinRecorder, type SpinVideo } from './recorder';
 import { WheelRenderer } from './wheel';
 import { Confetti } from './confetti';
 import { icons, setButton } from './icons';
@@ -34,6 +35,10 @@ const ui = {
   again: el<HTMLButtonElement>('again'),
   close: el<HTMLButtonElement>('close'),
   confetti: el<HTMLCanvasElement>('confetti'),
+  vidBox: el('vidBox'),
+  vidPreview: el<HTMLVideoElement>('vidPreview'),
+  vidStatus: el('vidStatus'),
+  vidDownload: el<HTMLAnchorElement>('vidDownload'),
 };
 
 // ---------- Estado ----------
@@ -341,8 +346,40 @@ ui.clear.onclick = () => {
 };
 
 // ---------- Giro ----------
+// ---------- Vídeo do giro ----------
+const recorder = SpinRecorder.supported() ? new SpinRecorder(ui.wheel) : null;
+let video: SpinVideo | null = null;
+let videoToken = 0;
+
+/** Esquece o vídeo anterior (libera a memória) e esconde a área de download. */
+function resetVideo(): void {
+  videoToken++;
+  recorder?.cancel();
+  if (video) URL.revokeObjectURL(video.url);
+  video = null;
+  ui.vidPreview.pause();
+  ui.vidPreview.removeAttribute('src');
+  ui.vidPreview.load();
+  ui.vidBox.hidden = true;
+}
+
+/** Nome do arquivo: lusm-sorte_<vencedor>_<data-hora>.<ext>, sem caracteres que dão problema. */
+function videoFileName(winner: string, ext: string): string {
+  const safe = winner.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'resultado';
+  const d = new Date();
+  const p2 = (x: number) => String(x).padStart(2, '0');
+  const stamp = `${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}`;
+  return `lusm-sorte_${safe}_${stamp}.${ext}`;
+}
+
 function spin(): void {
   if (wheel.spinning || entries.length < 2) return;
+  resetVideo();
+  try {
+    recorder?.start();
+  } catch (err) {
+    console.warn('LUSM: não foi possível gravar o vídeo', err);
+  }
   const n = entries.length;
   // O vencedor é sorteado aqui, antes da animação; a roleta só gira até ele.
   const plan = planSpin(wheel.rotation, n);
@@ -362,9 +399,11 @@ function spin(): void {
       ui.pointer.classList.remove('tick');
       void ui.pointer.getBoundingClientRect(); // reinicia a animação
       ui.pointer.classList.add('tick');
+      recorder?.tick();
     }
     wheel.bulbPhase = Math.floor(now / 90);
     wheel.draw(entries);
+    if (recorder?.recording) recorder.frame();
     if (t < 1) requestAnimationFrame(frame);
     else finish(plan.winner);
   };
@@ -386,6 +425,26 @@ function finish(winnerIndex: number): void {
   renderWins();
 
   ui.winName.textContent = winner.name;
+  if (recorder?.recording) {
+    const token = videoToken;
+    ui.vidBox.hidden = false;
+    ui.vidStatus.textContent = 'Gravando o resultado…';
+    ui.vidDownload.setAttribute('aria-disabled', 'true');
+    ui.vidDownload.removeAttribute('href');
+    void recorder.finish(winner.name, winner.color).then(v => {
+      if (token !== videoToken) { if (v) URL.revokeObjectURL(v.url); return; } // outro giro já começou
+      if (!v) { ui.vidBox.hidden = true; return; }
+      video = v;
+      ui.vidPreview.src = v.url;
+      void ui.vidPreview.play().catch(() => {});
+      ui.vidStatus.textContent = 'Vídeo pronto! Quer guardar?';
+      ui.vidDownload.href = v.url;
+      ui.vidDownload.download = videoFileName(winner.name, v.ext);
+      ui.vidDownload.removeAttribute('aria-disabled');
+    });
+  } else {
+    ui.vidBox.hidden = true;
+  }
   ui.overlay.classList.add('show');
   confetti.burst(winner.color);
   updateStatus();
@@ -393,6 +452,7 @@ function finish(winnerIndex: number): void {
 
 function closeModal(): void {
   ui.overlay.classList.remove('show');
+  resetVideo(); // fechou sem baixar: o vídeo é descartado
 }
 
 ui.spin.onclick = spin;

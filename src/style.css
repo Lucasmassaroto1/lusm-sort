@@ -192,7 +192,14 @@ ul.names::-webkit-scrollbar-thumb, .panel::-webkit-scrollbar-thumb { background:
 .card .trophy { width: 72px; height: 72px; animation: bounce 1s ease-in-out infinite; filter: drop-shadow(0 6px 14px #ffc83d66); }
 @keyframes bounce { 50% { transform: translateY(-10px) rotate(6deg); } }
 .card .lbl { color: var(--muted); letter-spacing: 3px; text-transform: uppercase; font-size: 13px; margin-top: 6px; }
-.card .win {
+.card .vid { display: flex; align-items: center; gap: 14px; margin: -6px 0 18px; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); text-align: left; }
+.vid[hidden] { display: none; }
+.vid video { width: 108px; aspect-ratio: 3 / 4; border-radius: 8px; background: #000; flex: none; object-fit: cover; }
+.vid-side { display: flex; flex-direction: column; gap: 10px; min-width: 0; flex: 1; }
+.vid-status { color: var(--muted); font-size: 14px; }
+.vid-dl { text-decoration: none; justify-content: center; }
+.vid-dl[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+.win {
   font-family: 'Bebas Neue', sans-serif; font-size: clamp(40px, 10vw, 76px); line-height: 1.05; margin: 8px 0 20px; word-break: break-word;
   background: linear-gradient(180deg, #fff, var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent;
   animation: pop .6s .2s cubic-bezier(.2, 1.8, .4, 1) both;
