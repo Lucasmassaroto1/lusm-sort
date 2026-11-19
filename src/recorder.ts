@@ -21,19 +21,10 @@ const TICK_MS = 120;
 export interface SpinVideo {
   blob: Blob;
   url: string;
-  /** Extensão do arquivo: mp4 quando o navegador grava em MP4, senão webm. */
-  ext: 'mp4' | 'webm';
 }
 
-/** Formatos em ordem de preferência: MP4 abre em quase tudo (WhatsApp, iPhone); WebM é a reserva. */
-const MIME_TYPES = [
-  'video/mp4;codecs=avc1.42E01E',
-  'video/mp4;codecs=avc1',
-  'video/mp4',
-  'video/webm;codecs=vp9',
-  'video/webm;codecs=vp8',
-  'video/webm',
-];
+/** Só MP4 (H.264): abre em quase tudo (WhatsApp, iPhone, Windows). */
+const MIME_TYPES = ['video/mp4;codecs=avc1.42E01E', 'video/mp4;codecs=avc1', 'video/mp4'];
 
 function pickMime(): string | undefined {
   return MIME_TYPES.find(t => MediaRecorder.isTypeSupported(t));
@@ -43,7 +34,7 @@ const pointerImg = new Image();
 pointerImg.src = pointerUrl;
 
 export class SpinRecorder {
-  /** O navegador consegue gravar canvas em vídeo? */
+  /** O navegador consegue gravar canvas em vídeo MP4? */
   static supported(): boolean {
     return (
       typeof MediaRecorder !== 'undefined' &&
@@ -95,9 +86,8 @@ export class SpinRecorder {
       this.done = undefined;
       if (!cb) return; // cancelado
       if (!this.chunks.length) return cb(null);
-      const type = this.mime.split(';')[0];
-      const blob = new Blob(this.chunks, { type });
-      cb({ blob, url: URL.createObjectURL(blob), ext: type === 'video/mp4' ? 'mp4' : 'webm' });
+      const blob = new Blob(this.chunks, { type: 'video/mp4' });
+      cb({ blob, url: URL.createObjectURL(blob) });
     };
     rec.start(250);
     this.rec = rec;

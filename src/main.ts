@@ -39,6 +39,7 @@ const ui = {
   vidPreview: el<HTMLVideoElement>('vidPreview'),
   vidStatus: el('vidStatus'),
   vidDownload: el<HTMLAnchorElement>('vidDownload'),
+  rec: el<HTMLButtonElement>('rec'),
 };
 
 // ---------- Estado ----------
@@ -348,7 +349,28 @@ ui.clear.onclick = () => {
 // ---------- Giro ----------
 // ---------- Vídeo do giro ----------
 const recorder = SpinRecorder.supported() ? new SpinRecorder(ui.wheel) : null;
+/** Gravação ligada pelo botão "Gravar" (começa desligada). */
+let recordOn = false;
 let video: SpinVideo | null = null;
+
+function paintRec(): void {
+  setButton(ui.rec, 'gravar', recordOn ? 'Gravando' : 'Gravar');
+  ui.rec.classList.toggle('on', recordOn);
+  ui.rec.setAttribute('aria-pressed', String(recordOn));
+  ui.rec.title = !recorder
+    ? 'Este navegador não consegue gravar vídeo em MP4 (use Chrome, Edge ou Safari)'
+    : recordOn
+      ? 'Os próximos giros serão gravados em MP4. Clique para desligar.'
+      : 'Gravar os próximos giros em vídeo MP4';
+}
+ui.rec.disabled = !recorder;
+ui.rec.onclick = () => {
+  if (!recorder || wheel.spinning) return;
+  recordOn = !recordOn;
+  paintRec();
+  showMsg(recordOn ? 'Gravação ligada: o próximo giro vira um vídeo MP4.' : 'Gravação desligada.', true);
+};
+paintRec();
 let videoToken = 0;
 
 /** Esquece o vídeo anterior (libera a memória) e esconde a área de download. */
@@ -364,19 +386,19 @@ function resetVideo(): void {
 }
 
 /** Nome do arquivo: lusm-sorte_<vencedor>_<data-hora>.<ext>, sem caracteres que dão problema. */
-function videoFileName(winner: string, ext: string): string {
+function videoFileName(winner: string): string {
   const safe = winner.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'resultado';
   const d = new Date();
   const p2 = (x: number) => String(x).padStart(2, '0');
   const stamp = `${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}`;
-  return `lusm-sorte_${safe}_${stamp}.${ext}`;
+  return `lusm-sorte_${safe}_${stamp}.mp4`;
 }
 
 function spin(): void {
   if (wheel.spinning || entries.length < 2) return;
   resetVideo();
   try {
-    recorder?.start();
+    if (recordOn) recorder?.start();
   } catch (err) {
     console.warn('LUSM: não foi possível gravar o vídeo', err);
   }
@@ -439,7 +461,7 @@ function finish(winnerIndex: number): void {
       void ui.vidPreview.play().catch(() => {});
       ui.vidStatus.textContent = 'Vídeo pronto! Quer guardar?';
       ui.vidDownload.href = v.url;
-      ui.vidDownload.download = videoFileName(winner.name, v.ext);
+      ui.vidDownload.download = videoFileName(winner.name);
       ui.vidDownload.removeAttribute('aria-disabled');
     });
   } else {
