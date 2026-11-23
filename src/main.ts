@@ -41,6 +41,12 @@ const ui = {
   vidStatus: el('vidStatus'),
   vidDownload: el<HTMLAnchorElement>('vidDownload'),
   rec: el<HTMLButtonElement>('rec'),
+  dialog: el('dialog'),
+  dlgIcon: el('dlgIcon'),
+  dlgTitle: el('dlgTitle'),
+  dlgText: el('dlgText'),
+  dlgOk: el<HTMLButtonElement>('dlgOk'),
+  dlgCancel: el<HTMLButtonElement>('dlgCancel'),
 };
 
 // ---------- Estado ----------
@@ -322,30 +328,68 @@ ui.shuffle.onclick = () => {
   showMsg('Posições embaralhadas!', true);
 };
 
-let clearArmed = false;
-let clearTimer: number | undefined;
 function paintClear(): void {
-  clearArmed = false;
-  ui.clear.classList.remove('warn');
   setButton(ui.clear, 'limpar', 'Limpar');
 }
-ui.clear.onclick = () => {
+ui.clear.onclick = async () => {
   if (wheel.spinning) return;
-  if (!clearArmed) {
-    clearArmed = true;
-    setButton(ui.clear, 'alerta', 'Clique de novo p/ confirmar');
-    ui.clear.classList.add('warn');
-    clearTimer = window.setTimeout(paintClear, 3000);
-    return;
-  }
-  clearTimeout(clearTimer);
-  paintClear();
+  if (!entries.length && !history.length) { showMsg('Não há nada para limpar.'); return; }
+  const n = entries.length;
+  const ok = await showDialog({
+    icon: 'limpar',
+    title: 'Limpar tudo?',
+    text: `Isso remove ${n === 1 ? 'o nome' : `os ${n} nomes`} da roleta e zera as vitórias. Não dá para desfazer.`,
+    okLabel: 'Limpar',
+    cancelLabel: 'Cancelar',
+    danger: true,
+  });
+  if (!ok || wheel.spinning) return;
   entries = [];
   history = [];
   wheel.rotation = 0;
   refresh();
   showMsg('Tudo limpo.', true);
 };
+
+// ---------- Janela de aviso / confirmação ----------
+interface DialogOptions {
+  icon: 'alerta' | 'limpar' | 'gravar';
+  title: string;
+  text: string;
+  okLabel: string;
+  /** Sem cancelLabel é só um aviso (um botão). */
+  cancelLabel?: string;
+  /** Botão principal vermelho, para ações que apagam algo. */
+  danger?: boolean;
+}
+let dialogResolve: ((ok: boolean) => void) | null = null;
+
+/** Abre a janela no centro da tela. Resolve true no botão principal, false em Cancelar/Esc/clique fora. */
+function showDialog(o: DialogOptions): Promise<boolean> {
+  dialogResolve?.(false);
+  ui.dlgIcon.innerHTML = icons[o.icon];
+  ui.dlgIcon.classList.toggle('danger', !!o.danger);
+  ui.dlgIcon.parentElement!.classList.toggle('danger', !!o.danger);
+  ui.dlgTitle.textContent = o.title;
+  ui.dlgText.textContent = o.text;
+  ui.dlgOk.textContent = o.okLabel;
+  ui.dlgOk.classList.toggle('danger', !!o.danger);
+  ui.dlgCancel.hidden = !o.cancelLabel;
+  ui.dlgCancel.textContent = o.cancelLabel ?? '';
+  ui.dialog.classList.add('show');
+  // Em ação perigosa o foco começa no Cancelar, para um Enter sem querer não apagar nada.
+  setTimeout(() => (o.danger && o.cancelLabel ? ui.dlgCancel : ui.dlgOk).focus(), 50);
+  return new Promise(resolve => (dialogResolve = resolve));
+}
+function closeDialog(ok: boolean): void {
+  ui.dialog.classList.remove('show');
+  const r = dialogResolve;
+  dialogResolve = null;
+  r?.(ok);
+}
+ui.dlgOk.onclick = () => closeDialog(true);
+ui.dlgCancel.onclick = () => closeDialog(false);
+ui.dialog.addEventListener('click', e => { if (e.target === ui.dialog) closeDialog(false); });
 
 // ---------- Giro ----------
 // ---------- Vídeo do giro ----------
@@ -368,7 +412,12 @@ ui.rec.classList.toggle('unsupported', !recorder);
 ui.rec.onclick = () => {
   if (!recorder) {
     // Navegador sem gravação em MP4: avisa e indica os navegadores que funcionam neste aparelho.
-    showMsg(unsupportedMessage(detectBrowser(navigator.userAgent, navigator.maxTouchPoints)), 'warn');
+    void showDialog({
+      icon: 'gravar',
+      title: 'Gravação indisponível',
+      text: unsupportedMessage(detectBrowser(navigator.userAgent, navigator.maxTouchPoints)),
+      okLabel: 'Entendi',
+    });
     return;
   }
   if (wheel.spinning) return;
@@ -488,6 +537,10 @@ ui.close.onclick = closeModal;
 ui.again.onclick = () => { closeModal(); setTimeout(spin, 450); };
 ui.overlay.addEventListener('click', e => { if (e.target === ui.overlay) closeModal(); });
 document.addEventListener('keydown', e => {
+  if (ui.dialog.classList.contains('show')) {
+    if (e.key === 'Escape') closeDialog(false);
+    return; // com a janela aberta, o teclado é dela (Enter/Espaço acionam o botão em foco)
+  }
   const open = ui.overlay.classList.contains('show');
   if (e.key === 'Escape' && open) closeModal();
   if (e.code === 'Space' && !open && document.activeElement?.tagName !== 'TEXTAREA') {

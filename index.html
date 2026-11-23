@@ -63,6 +63,17 @@
       </div>
     </div>
   </div>
+  <div class="overlay" id="dialog" role="dialog" aria-modal="true" aria-labelledby="dlgTitle" aria-describedby="dlgText">
+    <div class="card dlg">
+      <div class="dlg-ico" id="dlgIcon" aria-hidden="true"></div>
+      <h3 class="dlg-title" id="dlgTitle"></h3>
+      <p class="dlg-text" id="dlgText"></p>
+      <div class="row">
+        <button class="btn" id="dlgOk">OK</button>
+        <button class="btn ghost" id="dlgCancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
   <canvas id="confetti"></canvas>
 
   <script type="module" src="/src/main.ts"></script>

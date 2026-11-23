@@ -47,7 +47,7 @@ vercel --prod   # publica no endereço oficial
 4. Nomes repetidos (mesmo com maiúsculas ou espaços diferentes) são aceitos, mas a roleta avisa: cada repetição é uma fatia a mais e, portanto, mais chance de ganhar. Só a cópia mais nova pede confirmação: clique no ícone de alerta para manter. Cada item tem seu próprio selo de vitórias.
 5. Qualquer nome pode ser editado pelo lápis ao lado dele (Enter salva, Esc cancela).
 6. Cabem até 100 nomes (constante `MAX_NAMES` em `src/types.ts`); acima disso as fatias ficam finas demais para ler. O que passar do limite não é adicionado, e a roleta avisa quantos ficaram de fora.
-7. Com o botão **Gravar** ligado (ao lado de Embaralhar e Limpar), cada giro vira um vídeo MP4 curto (roleta girando + resultado). Na janela do vencedor aparece a prévia e o botão **Baixar vídeo**; fechar a janela descarta o vídeo. Em navegadores que não gravam MP4 (como o Firefox), clicar no botão mostra um aviso com os navegadores recomendados para aquele aparelho.
+7. Com o botão **Gravar** ligado (ao lado de Embaralhar e Limpar), cada giro vira um vídeo MP4 curto (roleta girando + resultado). Na janela do vencedor aparece a prévia e o botão **Baixar vídeo**; fechar a janela descarta o vídeo. Em navegadores que não gravam MP4 (como o Firefox), clicar no botão abre uma janela com os navegadores recomendados para aquele aparelho.
 8. Nada é salvo no navegador: ao recarregar ou fechar a página, a lista e as vitórias começam do zero.
 
 Os testes em `src/spin.test.ts` confirmam que a roleta sempre para no nome sorteado e que a distribuição é uniforme.
