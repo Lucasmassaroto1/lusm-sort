@@ -5,6 +5,7 @@ import { easeOut, indexAtPointer, mod, planSpin, TAU } from './spin';
 import { findDuplicates, nameKey, pendingCopies, winsByEntry } from './stats';
 import { cleanName, hasVisibleChar, truncate, visibleLength } from './text';
 import { SpinRecorder, type SpinVideo } from './recorder';
+import { detectBrowser, unsupportedMessage } from './browser';
 import { WheelRenderer } from './wheel';
 import { Confetti } from './confetti';
 import { icons, setButton } from './icons';
@@ -358,14 +359,19 @@ function paintRec(): void {
   ui.rec.classList.toggle('on', recordOn);
   ui.rec.setAttribute('aria-pressed', String(recordOn));
   ui.rec.title = !recorder
-    ? 'Este navegador não consegue gravar vídeo em MP4 (use Chrome, Edge ou Safari)'
+    ? 'Gravar os giros em vídeo MP4 (não disponível neste navegador)'
     : recordOn
       ? 'Os próximos giros serão gravados em MP4. Clique para desligar.'
       : 'Gravar os próximos giros em vídeo MP4';
 }
-ui.rec.disabled = !recorder;
+ui.rec.classList.toggle('unsupported', !recorder);
 ui.rec.onclick = () => {
-  if (!recorder || wheel.spinning) return;
+  if (!recorder) {
+    // Navegador sem gravação em MP4: avisa e indica os navegadores que funcionam neste aparelho.
+    showMsg(unsupportedMessage(detectBrowser(navigator.userAgent, navigator.maxTouchPoints)), 'warn');
+    return;
+  }
+  if (wheel.spinning) return;
   recordOn = !recordOn;
   paintRec();
   showMsg(recordOn ? 'Gravação ligada: o próximo giro vira um vídeo MP4.' : 'Gravação desligada.', true);
