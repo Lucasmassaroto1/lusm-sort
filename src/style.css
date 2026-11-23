@@ -175,6 +175,7 @@ ul.names::-webkit-scrollbar-thumb, .panel::-webkit-scrollbar-thumb { background:
 
 .opts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
 .opts .btn { flex: 1 1 auto; justify-content: center; }
+.btn.rec.unsupported { opacity: .6; }
 .btn.rec.on { color: #ff6b81; border-color: #ff4d6d88; background: #ff4d6d14; }
 .btn.rec.on .ico { animation: recPulse 1.2s ease-in-out infinite; }
 @keyframes recPulse { 50% { opacity: .35; } }
