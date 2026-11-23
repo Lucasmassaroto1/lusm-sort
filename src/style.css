@@ -118,7 +118,6 @@ textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px #ffc83d33; }
 .btn:active { transform: scale(.96); }
 .btn.ghost { background: var(--panel2); color: var(--txt); border: 1px solid var(--line); padding: 9px 14px; font-size: 13px; }
 .btn.ghost:hover { border-color: var(--gold); color: var(--gold); }
-.btn.warn { border-color: var(--danger); color: var(--danger); }
 .ico { display: inline-flex; }
 .ico svg { width: 16px; height: 16px; }
 
@@ -187,6 +186,16 @@ ul.names::-webkit-scrollbar-thumb, .panel::-webkit-scrollbar-thumb { background:
   z-index: 50; opacity: 0; pointer-events: none; transition: opacity .3s; padding: 16px;
 }
 .overlay.show { opacity: 1; pointer-events: auto; }
+#dialog { z-index: 60; }
+.card.dlg { width: min(420px, 100%); padding: 28px clamp(20px, 5vw, 32px) 24px; }
+.card.dlg.danger { border-color: var(--danger); box-shadow: 0 0 80px #ff4d6d40; }
+.dlg-ico { display: inline-flex; align-items: center; justify-content: center; width: 60px; height: 60px; border-radius: 50%; background: #ffc83d1f; color: var(--gold); }
+.dlg-ico.danger { background: #ff4d6d1f; color: var(--danger); }
+.dlg-ico svg { width: 30px; height: 30px; }
+.dlg-title { margin: 14px 0 8px; font-size: 22px; font-weight: 800; }
+.dlg-text { color: var(--muted); font-size: 15px; line-height: 1.5; margin: 0 0 22px; }
+.btn.danger { background: linear-gradient(180deg, #ff6b81, #e0314f); color: #fff; box-shadow: 0 6px 18px #ff4d6d44; }
+.dlg .row .btn[hidden] { display: none; }
 .card {
   text-align: center; padding: 32px clamp(20px, 5vw, 40px) 28px; border-radius: 26px; width: min(520px, 100%);
   background: linear-gradient(180deg, #221d40, #130f25); border: 2px solid var(--gold); box-shadow: 0 0 80px #ffc83d55;
