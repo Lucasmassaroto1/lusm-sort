@@ -130,11 +130,6 @@ export class WheelRenderer {
       ctx.arc(R, R, rOuter, 0, TAU);
       ctx.fillStyle = '#1f1c36';
       ctx.fill();
-      ctx.fillStyle = '#9b95c4';
-      ctx.font = '600 40px Outfit';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('Adicione nomes', R, R - 190);
     } else {
       const seg = TAU / n;
       // O nome vai da borda do botão central até perto do aro, sempre numa linha.
