@@ -103,7 +103,7 @@ function renderList(): void {
   const pending = new Set(pendingCopies(entries).map(e => e.id));
   const groupSize = new Map(findDuplicates(entries.map(e => e.name)).map(d => [nameKey(d.name), d.count]));
   ui.list.innerHTML = '';
-  if (!entries.length) ui.list.innerHTML = '<li class="empty">Nenhum nome ainda</li>';
+  if (!entries.length) ui.list.innerHTML = '<li class="empty">Adicione pelo menos <b>2 nomes</b> para girar.</li>';
   entries.forEach((entry, i) => {
     const li = document.createElement('li');
     if (animateList) li.style.animationDelay = `${Math.min(i * 20, 300)}ms`;
@@ -134,6 +134,12 @@ function renderList(): void {
     };
     ui.list.appendChild(li);
   });
+  if (entries.length === 1) {
+    const hint = document.createElement('li');
+    hint.className = 'empty';
+    hint.innerHTML = 'Adicione mais <b>1 nome</b> para girar.';
+    ui.list.appendChild(hint);
+  }
   ui.count.textContent = `${entries.length}/${MAX_NAMES}`;
   ui.count.classList.toggle('full', entries.length >= MAX_NAMES);
   const full = entries.length >= MAX_NAMES;
@@ -225,8 +231,7 @@ function updateStatus(): void {
   ui.spin.disabled = n < 2 || wheel.spinning;
   ui.spin.classList.toggle('pulse', n >= 2 && !wheel.spinning);
   if (wheel.spinning) ui.status.innerHTML = `Girando… boa sorte! ${icons.trevo}`;
-  else if (n === 0) ui.status.innerHTML = 'Adicione pelo menos <b>2 nomes</b> para girar.';
-  else if (n === 1) ui.status.innerHTML = `Só resta <b>${escapeHtml(entries[0].name)}</b>. Adicione mais nomes para girar.`;
+  else if (n < 2) ui.status.innerHTML = ''; // a dica de quantos nomes faltam fica na lista
   else {
     const pendingKeys = new Set(pendingCopies(entries).map(e => nameKey(e.name)));
     const dups = findDuplicates(entries.map(e => e.name)).filter(d => pendingKeys.has(nameKey(d.name)));

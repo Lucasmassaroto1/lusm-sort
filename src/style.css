@@ -171,7 +171,8 @@ ul.names::-webkit-scrollbar-thumb, .panel::-webkit-scrollbar-thumb { background:
 .names .wins.lead svg { opacity: 1; }
 .names .x { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; width: 26px; height: 26px; border-radius: 8px; flex: none; }
 .names .x:hover { color: var(--danger); background: #ff4d6d1a; }
-.empty { color: var(--muted); font-size: 14px; text-align: center; padding: 14px 0; justify-content: center; border: none !important; background: none !important; }
+.empty b { color: var(--gold); }
+.empty { display: block !important; color: var(--muted); font-size: 14px; text-align: center; padding: 14px 0; justify-content: center; border: none !important; background: none !important; }
 
 .opts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
 .opts .btn { flex: 1 1 auto; justify-content: center; }
