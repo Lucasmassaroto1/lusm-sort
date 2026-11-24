@@ -6,7 +6,7 @@
  * botão e uma faixa embaixo) e esse canvas é gravado com MediaRecorder.
  */
 import pointerUrl from './assets/pointer.svg';
-import { truncateToWidth } from './text';
+import { fitLabel } from './label';
 
 const W = 720;
 const H = 960;
@@ -14,8 +14,11 @@ const WHEEL = 600; // diâmetro da roleta no vídeo
 const CX = W / 2;
 const CY = 110 + WHEEL / 2; // centro da roleta
 const FPS = 30;
-/** Quanto tempo o resultado fica na tela depois que a roleta para. */
-const HOLD_MS = 2500;
+/**
+ * A gravação para quando o resultado aparece. Só segura este tempo para o quadro
+ * com o resultado entrar no vídeo (o gravador precisa de alguns quadros).
+ */
+const HOLD_MS = 500;
 const TICK_MS = 120;
 
 export interface SpinVideo {
@@ -163,10 +166,16 @@ export class SpinRecorder {
       ctx.fillStyle = '#9b95c4';
       ctx.font = "600 24px 'Outfit', sans-serif";
       ctx.fillText('O SORTEADO É', CX, top + 34);
-      ctx.font = "400 72px 'Bebas Neue', sans-serif";
-      const name = truncateToWidth(this.result.name, W - 140, s => ctx.measureText(s).width);
+      // Nome inteiro numa linha: diminui a letra até caber (reticências só em último caso).
+      ctx.font = "400 100px 'Bebas Neue', sans-serif";
+      const { text, fs } = fitLabel(this.result.name, t => ctx.measureText(t).width, {
+        maxW: W - 120,
+        maxFs: 72,
+        minFs: 30,
+      });
+      ctx.font = `400 ${fs}px 'Bebas Neue', sans-serif`;
       ctx.fillStyle = '#ffc83d';
-      ctx.fillText(name, CX, top + 92);
+      ctx.fillText(text, CX, top + 92);
     } else {
       ctx.fillStyle = '#9b95c4';
       ctx.font = "600 30px 'Outfit', sans-serif";
@@ -206,7 +215,7 @@ export class SpinRecorder {
   }
 
   /**
-   * A roleta parou: mostra o resultado por alguns segundos e encerra o vídeo.
+   * A roleta parou: coloca o resultado no último quadro e encerra o vídeo.
    * Resolve com o vídeo pronto (ou null se não deu para gravar).
    */
   finish(name: string, color: string): Promise<SpinVideo | null> {

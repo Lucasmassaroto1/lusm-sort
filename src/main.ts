@@ -505,7 +505,7 @@ function finish(winnerIndex: number): void {
   if (recorder?.recording) {
     const token = videoToken;
     ui.vidBox.hidden = false;
-    ui.vidStatus.textContent = 'Gravando o resultado…';
+    ui.vidStatus.textContent = 'Finalizando o vídeo…';
     ui.vidDownload.setAttribute('aria-disabled', 'true');
     ui.vidDownload.removeAttribute('href');
     void recorder.finish(winner.name, winner.color).then(v => {
