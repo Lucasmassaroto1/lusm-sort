@@ -1,6 +1,6 @@
 import type { Entry } from './types';
 import { TAU } from './spin';
-import { truncateToWidth } from './text';
+import { fitLabel } from './label';
 
 function shade(hex: string, amt: number): string {
   const c = parseInt(hex.slice(1), 16);
@@ -137,8 +137,12 @@ export class WheelRenderer {
       ctx.fillText('Adicione nomes', R, R - 190);
     } else {
       const seg = TAU / n;
-      const maxW = rOuter * 0.62;
-      const fs = Math.min(56, Math.max(14, seg * rOuter * 0.55));
+      // O nome vai da borda do botão central até perto do aro, sempre numa linha.
+      const right = rOuter - 30;
+      const left = R * 0.27;
+      const maxW = right - left;
+      // A fatia afina perto do centro: a letra cabe em ~80% da grossura no ponto onde o texto começa.
+      const s = Math.sin(Math.min(seg / 2, Math.PI / 2));
       for (let i = 0; i < n; i++) {
         const a0 = i * seg - Math.PI / 2;
         ctx.beginPath();
@@ -159,15 +163,20 @@ export class WheelRenderer {
         ctx.save();
         ctx.translate(R, R);
         ctx.rotate(a0 + seg / 2);
+        ctx.font = '800 100px Outfit';
+        const measure = (t: string) => ctx.measureText(t).width;
+        const m = measure(entries[i].name);
+        // Maior letra em que o texto (começando em right - largura) ainda cabe na grossura da fatia.
+        const maxFs = Math.min(56, (1.6 * s * right) / (1 + (1.6 * s * m) / 100));
+        const { text: label, fs } = fitLabel(entries[i].name, measure, { maxW, maxFs, minFs: 18 });
         ctx.font = `800 ${fs}px Outfit`;
-        const label = truncateToWidth(entries[i].name, maxW, s => ctx.measureText(s).width);
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         ctx.shadowColor = '#000a';
         ctx.shadowBlur = 8;
         ctx.shadowOffsetY = 2;
         ctx.fillStyle = '#fff';
-        ctx.fillText(label, rOuter - 36, 0);
+        ctx.fillText(label, right, 0);
         ctx.restore();
       }
     }
