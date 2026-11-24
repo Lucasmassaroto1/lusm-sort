@@ -230,7 +230,7 @@ function updateStatus(): void {
   const n = entries.length;
   ui.spin.disabled = n < 2 || wheel.spinning;
   ui.spin.classList.toggle('pulse', n >= 2 && !wheel.spinning);
-  if (wheel.spinning) ui.status.innerHTML = `Girando… boa sorte! ${icons.trevo}`;
+  if (wheel.spinning) ui.status.innerHTML = ''; // nada embaixo da roleta durante o giro
   else if (n < 2) ui.status.innerHTML = ''; // a dica de quantos nomes faltam fica na lista
   else {
     const pendingKeys = new Set(pendingCopies(entries).map(e => nameKey(e.name)));
@@ -353,7 +353,6 @@ ui.clear.onclick = async () => {
   history = [];
   wheel.rotation = 0;
   refresh();
-  showMsg('Tudo limpo.', true);
 };
 
 // ---------- Janela de aviso / confirmação ----------

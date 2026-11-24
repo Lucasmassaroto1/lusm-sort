@@ -78,7 +78,7 @@ src/
 
 - `public/favicon.ico`, `public/favicon.svg`: ícone da aba do navegador
 - `src/assets/pointer.svg`: ponteiro da roleta
-- `src/assets/icons/`: ícones dos botões, do troféu, da coroa das vitórias e do trevo (SVG)
+- `src/assets/icons/`: ícones dos botões, do troféu e da coroa das vitórias (SVG)
 
 ---
 
